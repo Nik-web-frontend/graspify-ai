@@ -17,7 +17,7 @@ export const registerUser = async ({ name, email, password }) => {
         password,
     });
 
-   const token = generateToken(user);
+    const token = generateToken(user);
 
     return {
         success: true,
@@ -31,3 +31,34 @@ export const registerUser = async ({ name, email, password }) => {
         },
     };
 };
+
+export const loginUser = async ({ email, password }) => {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        throw new Error("Invalid email or password.");
+    }
+
+
+    const isPasswordCorrect = await user.comparePassword(password);
+
+    if (!isPasswordCorrect) {
+        throw new Error("Invalid email or password.");
+    }
+    const token = generateToken(user)
+
+
+
+    return {
+        success: true,
+        message: "User logged in successfully.",
+        token,
+        user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+        },
+    };
+
+}
