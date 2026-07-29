@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import axios from "axios";
 import authRoutes from "./routes/auth.routes.js";
+import documentRoutes from './routes/document.routes.js'
 
 const app = express();
 
@@ -35,5 +36,7 @@ app.get("/api/test-python", async (req, res) => {
         });
     }
 });
+
+app.use("/api/documents", documentRoutes);
 
 export default app;

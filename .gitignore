@@ -26,3 +26,6 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+server/uploads/*
+!server/uploads/.gitkeep
