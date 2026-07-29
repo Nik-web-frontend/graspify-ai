@@ -1,20 +1,8 @@
 from fastapi import FastAPI
+from app.routes.health import router as health_router
+from app.routes.document import router as document_router
 
-app = FastAPI()
+app = FastAPI(title="Graspify AI NLP Service")
 
-
-@app.get("/")
-def root():
-    return {
-        "success": True,
-        "message": "Graspify AI NLP Service is running 🚀"
-    }
-
-
-
-@app.get("/health")
-def health():
-    return {
-        "status": "healthy",
-        "service": "Graspify AI NLP Service"
-    }
+app.include_router(health_router)
+app.include_router(document_router)
