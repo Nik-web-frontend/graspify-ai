@@ -27,5 +27,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# PDF Uploads 
 server/uploads/*
 !server/uploads/.gitkeep
+
+# ChromaDB
+nlp-service\chroma_db
