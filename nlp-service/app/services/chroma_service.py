@@ -22,3 +22,11 @@ def store_embeddings(chunks, embeddings, metadata):
 
 def get_all_documents():
     return collection.get()
+
+
+def search_similar_chunks(question_embedding, n_results=3):
+    results = collection.query(
+        query_embeddings=[question_embedding.tolist()], n_results=n_results
+    )
+
+    return results

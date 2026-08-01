@@ -7,3 +7,7 @@ def create_embeddings(chunks):
     embeddings = model.encode(chunks)
 
     return embeddings
+
+
+def create_query_embedding(query):
+    return model.encode(query)
