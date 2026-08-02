@@ -32,4 +32,4 @@ server/uploads/*
 !server/uploads/.gitkeep
 
 # ChromaDB
-nlp-service\chroma_db
+nlp-service/chroma_db/
