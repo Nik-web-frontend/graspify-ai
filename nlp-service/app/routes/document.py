@@ -10,6 +10,8 @@ from app.services.chroma_service import (
     get_all_documents,
     search_similar_chunks,
 )
+from app.services.gemini_service import generate_response
+from app.services.rag_service import answer_question
 
 router = APIRouter()
 
@@ -20,6 +22,10 @@ class PDFRequest(BaseModel):
 
 class QueryRequest(BaseModel):
     query: str
+
+
+class QuestionRequest(BaseModel):
+    question: str
 
 
 @router.post("/extract-text")
@@ -56,4 +62,25 @@ def search(request: QueryRequest):
     return {
         "success": True,
         "results": results,
+    }
+
+
+@router.get("/test-gemini")
+def test_gemini():
+    answer = generate_response("What is Artificial Intelligence?")
+
+    return {
+        "success": True,
+        "answer": answer,
+    }
+
+
+@router.post("/ask")
+def ask_question(request: QuestionRequest):
+    answer = answer_question(request.question)
+
+    return {
+        "success": True,
+        "question": request.question,
+        "answer": answer,
     }
