@@ -18,6 +18,9 @@ router = APIRouter()
 
 class PDFRequest(BaseModel):
     file_path: str
+    document_id: str
+    user_id: str
+    title: str
 
 
 class QueryRequest(BaseModel):
@@ -36,9 +39,9 @@ def extract_text(request: PDFRequest):
     embeddings = create_embeddings(chunks)
 
     metadata = {
-        "document_id": "test_document",
-        "user_id": "test_user",
-        "title": "Test PDF",
+        "document_id": request.document_id,
+        "user_id": request.user_id,
+        "title": request.title,
     }
 
     store_embeddings(chunks, embeddings, metadata)
