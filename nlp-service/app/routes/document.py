@@ -28,6 +28,7 @@ class QueryRequest(BaseModel):
 
 
 class QuestionRequest(BaseModel):
+    document_id: str
     question: str
 
 
@@ -80,7 +81,7 @@ def test_gemini():
 
 @router.post("/ask")
 def ask_question(request: QuestionRequest):
-    answer = answer_question(request.question)
+    answer = answer_question(request.document_id, request.question)
 
     return {
         "success": True,

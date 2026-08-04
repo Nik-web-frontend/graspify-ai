@@ -3,9 +3,9 @@ from app.services.chroma_service import search_similar_chunks
 from app.services.gemini_service import generate_response
 
 
-def answer_question(question: str):
+def answer_question(document_id: str, question: str):
     question_embedding = create_query_embedding(question)
-    search_results = search_similar_chunks(question_embedding)
+    search_results = search_similar_chunks(question_embedding, document_id)
     retrieved_chunks = search_results["documents"][0]
 
     context = "\n\n".join(retrieved_chunks)
