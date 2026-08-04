@@ -1,10 +1,14 @@
 import { uploadDocument as uploadDocumentService } from "../services/document.service.js";
 
+
 export const uploadDocument = async (req, res) => {
     try {
+        const { chatId } = req.params;
+
         const document = await uploadDocumentService({
             file: req.file,
             user: req.user,
+            chatId
         });
 
         res.status(201).json({

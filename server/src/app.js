@@ -3,6 +3,7 @@ import cors from "cors";
 import axios from "axios";
 import authRoutes from "./routes/auth.routes.js";
 import documentRoutes from './routes/document.routes.js'
+import chatRoutes from "./routes/chat.routes.js";
 
 const app = express();
 
@@ -38,5 +39,7 @@ app.get("/api/test-python", async (req, res) => {
 });
 
 app.use("/api/documents", documentRoutes);
+
+app.use("/api/chats", chatRoutes);
 
 export default app;

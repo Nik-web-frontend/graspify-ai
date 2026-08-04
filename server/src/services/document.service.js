@@ -1,8 +1,9 @@
 import Document from "../models/document.model.js";
 import { processDocument } from "./python.service.js";
 import path from "path";
+import Chat from "../models/chat.model.js";
 
-export const uploadDocument = async ({ file, user }) => {
+export const uploadDocument = async ({ file, user, chatId }) => {
 
     const document = await Document.create({
         title: file.originalname.replace(".pdf", ""),
@@ -28,12 +29,21 @@ export const uploadDocument = async ({ file, user }) => {
 
         document.processingStatus = "completed";
         await document.save();
+
+        await Chat.findByIdAndUpdate(
+            chatId,
+            {
+                $push: {
+                    documents: document._id,
+                },
+            }
+        );
     }
     catch (error) {
         document.processingStatus = "failed";
         await document.save();
 
-        throw new Error("Failed to process document.");
+        throw new Error(error.message);
     }
 
     return document;
