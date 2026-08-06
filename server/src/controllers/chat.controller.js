@@ -1,5 +1,5 @@
 import { createChat as createChatService } from "../services/chat.service.js";
-import { askQuestionInChat, getChatMessages } from "../services/chat.service.js";
+import { askQuestionInChat, getChatMessages, getUserChats } from "../services/chat.service.js";
 
 export const createChat = async (req, res) => {
     try {
@@ -49,6 +49,23 @@ export const getMessages = async (req, res) => {
         res.status(200).json({
             success: true,
             messages,
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+export const getChats = async (req, res) => {
+    try {
+        const chats = await getUserChats(req.user._id);
+
+        res.status(200).json({
+            success: true,
+            chats,
         });
 
     } catch (error) {

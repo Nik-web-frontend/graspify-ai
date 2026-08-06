@@ -39,6 +39,8 @@ export const askQuestionInChat = async ({ chatId, question }) => {
     content: response.answer,
   });
 
+  await Chat.findByIdAndUpdate(chatId, {});
+
   return response;
 };
 
@@ -50,4 +52,14 @@ export const getChatMessages = async (chatId) => {
   });
 
   return messages;
+};
+
+export const getUserChats = async (userId) => {
+    const chats = await Chat.find({
+        user: userId,
+    }).sort({
+        updatedAt: -1,
+    });
+
+    return chats;
 };
