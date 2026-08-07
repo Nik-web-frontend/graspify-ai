@@ -13,7 +13,7 @@ function Navbar() {
     };
 
     return (
-        <button onClick={handleLogout}>
+        <button onClick={handleLogout} style={{height: '60px'}}>
             Logout
         </button>
     );

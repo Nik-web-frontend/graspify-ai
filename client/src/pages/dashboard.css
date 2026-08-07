@@ -1,0 +1,12 @@
+.dashboard-container {
+    display: flex;
+    height: calc(100vh - 60px);
+}
+
+.sidebar {
+    width: 280px;
+}
+
+.main-content {
+    flex: 1;
+}
