@@ -31,3 +31,11 @@ export const getMessages = async (chatId) => {
 
   return response.data;
 };
+
+export const askQuestion = async (chatId, question) => {
+    const response = await API.post(`/chats/${chatId}/ask`, {
+        question,
+    });
+
+    return response.data;
+};

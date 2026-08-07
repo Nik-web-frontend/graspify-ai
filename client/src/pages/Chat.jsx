@@ -1,10 +1,12 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getMessages } from "../services/chat";
+import { askQuestion } from "../services/chat";
 
 function Chat() {
   const { chatId } = useParams();
   const [messages, setMessages] = useState([]);
+  const [question, setQuestion] = useState("");
 
   const fetchMessages = async () => {
     try {
@@ -12,7 +14,22 @@ function Chat() {
 
       setMessages(response.messages);
 
+    } catch (error) {
+      console.error(error.response?.data || error.message);
+    }
+  };
 
+  const handleSend = async () => {
+    if (!question.trim()) return;
+
+    try {
+      const response = await askQuestion(chatId, question);
+
+      await fetchMessages();
+
+      console.log(response);
+
+      setQuestion("");
 
     } catch (error) {
       console.error(error.response?.data || error.message);
@@ -38,6 +55,18 @@ function Chat() {
           <p>{message.content}</p>
         </div>
       ))}
+
+      <input
+        type="text"
+        placeholder="Ask anything..."
+        value={question}
+        onChange={(e) => setQuestion(e.target.value)}
+      />
+
+      <button onClick={handleSend}>
+        Send
+      </button>
+
 
     </>
   )
