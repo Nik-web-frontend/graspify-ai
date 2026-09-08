@@ -1,22 +1,42 @@
 import { useNavigate } from "react-router-dom";
 
 function Navbar() {
+  const navigate = useNavigate();
 
-    const navigate = useNavigate();
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/", { replace: true });
+  };
 
-    const handleLogout = () => {
+  return (
+    <nav className="dashboard-navbar">
 
-        localStorage.removeItem("token");
+      <div className="dashboard-logo">
+        <span className="dashboard-logo-icon">G</span>
+        <span>Graspify AI</span>
+      </div>
 
-        navigate("/", { replace: true });
+      <div className="dashboard-nav-right">
 
-    };
+        <div className="dashboard-user">
+          <div className="dashboard-user-circle">
+            Y
+          </div>
 
-    return (
-        <button onClick={handleLogout} style={{height: '60px'}}>
-            Logout
+          <span>Yash</span>
+        </div>
+
+        <button
+          className="dashboard-logout"
+          onClick={handleLogout}
+        >
+          Logout
         </button>
-    );
+
+      </div>
+
+    </nav>
+  );
 }
 
 export default Navbar;

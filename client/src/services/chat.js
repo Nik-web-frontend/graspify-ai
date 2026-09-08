@@ -39,3 +39,9 @@ export const askQuestion = async (chatId, question) => {
 
     return response.data;
 };
+
+export const getChat = async (chatId) => {
+  const response = await API.get(`/chats/${chatId}`);
+
+  return response.data;
+};

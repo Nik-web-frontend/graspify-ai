@@ -1,62 +1,142 @@
-import React from 'react'
-import { createChat } from "../services/chat";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { getChats } from "../services/chat";
-
+import { createChat, getChats } from "../services/chat";
 
 const Sidebar = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const [chats, setChats] = useState([]);
+  const [chats, setChats] = useState([]);
 
-    const handleCreateChat = async () => {
-        try {
-            const response = await createChat();
+  const handleCreateChat = async () => {
+    try {
+      const response = await createChat();
 
-            console.log(response);
+      console.log(response);
 
-            navigate(`/chat/${response.chat._id}`);
-        } catch (error) {
-            console.error(error.response?.data || error.message);
-        }
-    };
+      navigate(`/chats/${response.chat._id}`);
 
-    const fetchChats = async () => {
-        try {
-            const response = await getChats();
+    } catch (error) {
+      console.error(
+        error.response?.data || error.message
+      );
+    }
+  };
 
-            setChats(response.chats);
+  const fetchChats = async () => {
+    try {
+      const response = await getChats();
 
-        } catch (error) {
-            console.error(error.response?.data || error.message);
-        }
-    };
+      setChats(response.chats);
 
-    useEffect(() => {
-        fetchChats();
-    }, []);
+    } catch (error) {
+      console.error(
+        error.response?.data || error.message
+      );
+    }
+  };
 
-    return (
-        <>
-            <div className="sidebar" style={{ display: "flex", flexDirection: "column" }}>
-                <button onClick={handleCreateChat}>
-                    + New Chat
-                </button>
+  useEffect(() => {
+    fetchChats();
+  }, []);
 
-                {chats.map((chat) => (
-                    <div key={chat._id}
-                        onClick={() => navigate(`/chats/${chat._id}`)}
-                    >
-                        {chat.title}
-                    </div>
-                ))}
-            </div>
+  return (
+    <aside className="dashboard-sidebar">
 
-        </>
+      {/* New Chat */}
+      <button
+        className="new-chat-button"
+        onClick={handleCreateChat}
+      >
+        + New Chat
+      </button>
 
 
-    )
-}
+      {/* Recent Chats */}
+      <div className="sidebar-section">
 
-export default Sidebar
+        <p className="sidebar-section-title">
+          Recent Chats
+        </p>
+
+        <div className="chat-list">
+
+          {chats.length > 0 ? (
+
+            chats.map((chat) => (
+
+              <button
+                key={chat._id}
+                className="sidebar-chat"
+                onClick={() =>
+                  navigate(`/chats/${chat._id}`)
+                }
+              >
+                <span className="chat-icon">
+                  💬
+                </span>
+
+                <span className="chat-title">
+                  {chat.title}
+                </span>
+              </button>
+
+            ))
+
+          ) : (
+
+            <p className="no-chats">
+              No chats yet
+            </p>
+
+          )}
+
+        </div>
+
+      </div>
+
+
+      {/* Study Tools */}
+      <div className="sidebar-section study-tools">
+
+        <p className="sidebar-section-title">
+          Study Tools
+        </p>
+
+        <button className="sidebar-tool">
+          📄
+          <span>Documents</span>
+        </button>
+
+        <button className="sidebar-tool">
+          📝
+          <span>Summaries</span>
+        </button>
+
+        <button className="sidebar-tool">
+          🧠
+          <span>Flashcards</span>
+        </button>
+
+        <button className="sidebar-tool">
+          ❓
+          <span>Quizzes</span>
+        </button>
+
+      </div>
+
+
+      {/* Bottom */}
+      <div className="sidebar-bottom">
+
+        <button className="sidebar-tool">
+          ⚙️
+          <span>Settings</span>
+        </button>
+
+      </div>
+
+    </aside>
+  );
+};
+
+export default Sidebar;
