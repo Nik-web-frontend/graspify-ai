@@ -32,3 +32,7 @@ def search_similar_chunks(question_embedding, document_id, n_results=5):
     )
 
     return results
+
+
+def delete_document(document_id):
+    collection.delete(where={"document_id": document_id})

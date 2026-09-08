@@ -9,6 +9,7 @@ from app.services.chroma_service import (
     store_embeddings,
     get_all_documents,
     search_similar_chunks,
+    delete_document,
 )
 from app.services.gemini_service import generate_response
 from app.services.rag_service import answer_question
@@ -88,3 +89,11 @@ def ask_question(request: QuestionRequest):
         "question": request.question,
         "answer": answer,
     }
+
+
+@router.delete("/document/{document_id}")
+def delete_document_embeddings(document_id: str):
+
+    delete_document(document_id)
+
+    return {"success": True, "message": "Document embeddings deleted successfully."}

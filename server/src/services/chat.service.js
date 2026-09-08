@@ -63,3 +63,16 @@ export const getUserChats = async (userId) => {
 
     return chats;
 };
+
+export const getChatById = async (chatId, userId) => {
+  const chat = await Chat.findOne({
+    _id: chatId,
+    user: userId,
+  }).populate("documents");
+
+  if (!chat) {
+    throw new Error("Chat not found.");
+  }
+
+  return chat;
+};

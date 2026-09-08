@@ -1,7 +1,12 @@
 import Document from "../models/document.model.js";
-import { processDocument } from "./python.service.js";
 import path from "path";
 import Chat from "../models/chat.model.js";
+
+import fs from "fs/promises";
+import {
+    processDocument,
+    deleteDocumentFromPython
+} from "./python.service.js";
 
 export const uploadDocument = async ({ file, user, chatId }) => {
 
@@ -47,4 +52,68 @@ export const uploadDocument = async ({ file, user, chatId }) => {
     }
 
     return document;
+};
+
+export const deleteDocument = async ({
+    chatId,
+    user,
+}) => {
+
+    const chat = await Chat.findOne({
+        _id: chatId,
+        user: user._id,
+    }).populate("documents");
+
+    if (!chat) {
+        throw new Error("Chat not found.");
+    }
+
+    if (chat.documents.length === 0) {
+        throw new Error("No document found in this chat.");
+    }
+
+    const document = chat.documents[0];
+
+    // Delete embeddings from Chroma
+    await deleteDocumentFromPython(
+        document._id.toString()
+    );
+
+    // Delete physical PDF
+    try {
+        await fs.unlink(document.filePath);
+    } catch (error) {
+        console.log(
+            "PDF file could not be deleted:",
+            error.message
+        );
+    }
+
+    // Remove document from Chat
+    chat.documents = [];
+    await chat.save();
+
+    // Delete MongoDB document
+    await Document.findByIdAndDelete(
+        document._id
+    );
+
+    return document;
+};
+
+export const getChatDocument = async ({ chatId, user }) => {
+    const chat = await Chat.findOne({
+        _id: chatId,
+        user: user._id,
+    }).populate("documents");
+
+    if (!chat) {
+        throw new Error("Chat not found.");
+    }
+
+    if (chat.documents.length === 0) {
+        return null;
+    }
+
+    return chat.documents[0];
 };
