@@ -254,26 +254,6 @@ function Chat() {
 
         <main className="chat-main">
 
-
-          {/* Chat Header */}
-
-          <div className="chat-header">
-
-            <div>
-
-              <h2>
-                AI Study Assistant
-              </h2>
-
-              <p>
-                Ask questions about your study material
-              </p>
-
-            </div>
-
-          </div>
-
-
           {/* Document Area */}
 
           <div className="document-area">
@@ -367,7 +347,7 @@ function Chat() {
 
           <div className="messages-area">
 
-            {messages.length === 0 && !asking? (
+            {messages.length === 0 && !asking ? (
 
               <div className="empty-chat">
 

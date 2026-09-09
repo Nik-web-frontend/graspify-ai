@@ -1,4 +1,34 @@
+import { useEffect, useState } from "react";
+import axios from "axios";
+
 function MainContent() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        if (!token) return;
+
+        const response = await axios.get(
+          "http://localhost:5000/api/auth/profile",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setUser(response.data.user);
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
   return (
     <main className="dashboard-main">
 
@@ -11,7 +41,7 @@ function MainContent() {
           </span>
 
           <h1>
-            Welcome back, Yash 👋
+            Welcome back, {user?.name || "User"} 👋
           </h1>
 
           <p>
@@ -87,48 +117,6 @@ function MainContent() {
 
           <button className="card-button">
             Explore Tools →
-          </button>
-
-        </div>
-
-      </section>
-
-
-      {/* Recent Documents */}
-      <section className="recent-section">
-
-        <div className="section-title-row">
-
-          <div>
-            <span className="dashboard-label">
-              YOUR MATERIAL
-            </span>
-
-            <h2>
-              Recent Documents
-            </h2>
-          </div>
-
-        </div>
-
-
-        <div className="empty-documents">
-
-          <div className="empty-icon">
-            📚
-          </div>
-
-          <h3>
-            No documents yet
-          </h3>
-
-          <p>
-            Upload your first study PDF to start
-            learning with Graspify AI.
-          </p>
-
-          <button className="upload-button">
-            Upload Your First PDF →
           </button>
 
         </div>
