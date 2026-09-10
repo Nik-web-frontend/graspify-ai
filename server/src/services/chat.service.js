@@ -1,6 +1,8 @@
 import Chat from "../models/chat.model.js";
-import { askQuestion } from "./python.service.js";
+import { askQuestion,  deleteDocumentFromPython, } from "./python.service.js";
 import Message from "../models/message.model.js";
+import Document from "../models/document.model.js";
+import fs from "fs/promises";
 
 export const createChat = async ({ user }) => {
   const chat = await Chat.create({
@@ -73,6 +75,67 @@ export const getChatById = async (chatId, userId) => {
   if (!chat) {
     throw new Error("Chat not found.");
   }
+
+  return chat;
+};
+
+export const renameChat = async ({ chatId, userId, title }) => {
+  const chat = await Chat.findOne({
+    _id: chatId,
+    user: userId,
+  });
+
+  if (!chat) {
+    throw new Error("Chat not found.");
+  }
+
+  chat.title = title;
+  await chat.save();
+
+  return chat;
+};
+
+export const deleteChat = async ({ chatId, userId }) => {
+  const chat = await Chat.findOne({
+    _id: chatId,
+    user: userId,
+  }).populate("documents");
+
+  if (!chat) {
+    throw new Error("Chat not found.");
+  }
+
+  // Delete messages
+  await Message.deleteMany({
+    chat: chatId,
+  });
+
+  // Delete documents and their related data
+  for (const document of chat.documents) {
+
+    // Delete embeddings from Chroma
+    await deleteDocumentFromPython(
+      document._id.toString()
+    );
+
+    // Delete physical PDF
+    try {
+      await fs.unlink(document.filePath);
+    } catch (error) {
+      console.log(
+        "PDF file could not be deleted:",
+        error.message
+      );
+    }
+
+    // Delete document from MongoDB
+    await Document.findByIdAndDelete(
+      document._id
+    );
+  }
+
+  // Delete chat
+  await Chat.findByIdAndDelete(chatId);
 
   return chat;
 };

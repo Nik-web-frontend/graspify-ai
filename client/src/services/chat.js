@@ -45,3 +45,17 @@ export const getChat = async (chatId) => {
 
   return response.data;
 };
+
+export const renameChat = async (chatId, title) => {
+  const response = await API.patch(`/chats/${chatId}`, {
+    title,
+  });
+
+  return response.data;
+};
+
+export const deleteChat = async (chatId) => {
+  const response = await API.delete(`/chats/${chatId}`);
+
+  return response.data;
+};

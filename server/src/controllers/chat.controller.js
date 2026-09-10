@@ -1,4 +1,8 @@
-import { createChat as createChatService } from "../services/chat.service.js";
+import {
+    createChat as createChatService,
+    renameChat as renameChatService,
+    deleteChat as deleteChatService
+} from "../services/chat.service.js";
 import { askQuestionInChat, getChatMessages, getUserChats, getChatById } from "../services/chat.service.js";
 
 export const createChat = async (req, res) => {
@@ -88,6 +92,60 @@ export const getChat = async (req, res) => {
         res.status(200).json({
             success: true,
             chat,
+        });
+
+    } catch (error) {
+        res.status(404).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+export const renameChat = async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        const { title } = req.body;
+
+        if (!title || !title.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Chat title is required.",
+            });
+        }
+
+        const chat = await renameChatService({
+            chatId,
+            userId: req.user._id,
+            title: title.trim(),
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Chat renamed successfully.",
+            chat,
+        });
+
+    } catch (error) {
+        res.status(404).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+export const deleteChat = async (req, res) => {
+    try {
+        const { chatId } = req.params;
+
+        await deleteChatService({
+            chatId,
+            userId: req.user._id,
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Chat deleted successfully.",
         });
 
     } catch (error) {

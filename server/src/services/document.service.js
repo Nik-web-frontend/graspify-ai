@@ -41,6 +41,9 @@ export const uploadDocument = async ({ file, user, chatId }) => {
                 $push: {
                     documents: document._id,
                 },
+                $set: {
+                    title: document.title,
+                },
             }
         );
     }

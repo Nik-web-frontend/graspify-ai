@@ -24,6 +24,8 @@ function Chat() {
   const [deleting, setDeleting] = useState(false);
   const [asking, setAsking] = useState(false);
 
+  const [chatRefresh, setChatRefresh] = useState(0);
+
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -108,6 +110,7 @@ function Chat() {
       console.log(response);
 
       setDocument(response.document);
+      setChatRefresh((prev) => prev + 1);
 
     } catch (error) {
 
@@ -247,8 +250,7 @@ function Chat() {
 
         {/* Sidebar */}
 
-        <Sidebar />
-
+        <Sidebar chatId={chatId} refreshTrigger={chatRefresh} />
 
         {/* Main Chat */}
 
