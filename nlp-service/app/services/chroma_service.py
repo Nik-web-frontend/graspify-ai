@@ -24,11 +24,11 @@ def get_all_documents():
     return collection.get()
 
 
-def search_similar_chunks(question_embedding, document_id, n_results=5):
+def search_similar_chunks(question_embedding, document_ids, n_results=5):
     results = collection.query(
         query_embeddings=[question_embedding.tolist()],
         n_results=n_results,
-        where={"document_id": document_id},
+        where={"document_id": {"$in": document_ids}},
     )
 
     return results

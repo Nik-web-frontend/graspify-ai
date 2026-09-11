@@ -59,23 +59,32 @@ export const uploadDocument = async ({ file, user, chatId }) => {
 
 export const deleteDocument = async ({
     chatId,
+    documentId,
     user,
 }) => {
 
     const chat = await Chat.findOne({
         _id: chatId,
         user: user._id,
-    }).populate("documents");
+    });
 
     if (!chat) {
         throw new Error("Chat not found.");
     }
 
-    if (chat.documents.length === 0) {
-        throw new Error("No document found in this chat.");
+    const documentExists = chat.documents.some(
+        (id) => id.toString() === documentId
+    );
+
+    if (!documentExists) {
+        throw new Error("Document not found in this chat.");
     }
 
-    const document = chat.documents[0];
+    const document = await Document.findById(documentId);
+
+    if (!document) {
+        throw new Error("Document not found.");
+    }
 
     // Delete embeddings from Chroma
     await deleteDocumentFromPython(
@@ -92,19 +101,23 @@ export const deleteDocument = async ({
         );
     }
 
-    // Remove document from Chat
-    chat.documents = [];
-    await chat.save();
-
-    // Delete MongoDB document
-    await Document.findByIdAndDelete(
-        document._id
+    // Remove only this document from Chat
+    await Chat.findByIdAndUpdate(
+        chatId,
+        {
+            $pull: {
+                documents: documentId,
+            },
+        }
     );
+
+    // Delete document from MongoDB
+    await Document.findByIdAndDelete(documentId);
 
     return document;
 };
 
-export const getChatDocument = async ({ chatId, user }) => {
+export const getChatDocuments = async ({ chatId, user }) => {
     const chat = await Chat.findOne({
         _id: chatId,
         user: user._id,
@@ -114,9 +127,5 @@ export const getChatDocument = async ({ chatId, user }) => {
         throw new Error("Chat not found.");
     }
 
-    if (chat.documents.length === 0) {
-        return null;
-    }
-
-    return chat.documents[0];
+    return chat.documents;
 };

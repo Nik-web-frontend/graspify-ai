@@ -1,5 +1,5 @@
 import Chat from "../models/chat.model.js";
-import { askQuestion,  deleteDocumentFromPython, } from "./python.service.js";
+import { askQuestion, deleteDocumentFromPython, } from "./python.service.js";
 import Message from "../models/message.model.js";
 import Document from "../models/document.model.js";
 import fs from "fs/promises";
@@ -14,15 +14,20 @@ export const createChat = async ({ user }) => {
 };
 
 export const askQuestionInChat = async ({ chatId, question }) => {
+
   const chat = await Chat.findById(chatId);
+
   if (!chat) {
     throw new Error("Chat not found.");
   }
+
   if (chat.documents.length === 0) {
     throw new Error("No document found in this chat.");
   }
 
-  const documentId = chat.documents[0];
+  const documentIds = chat.documents.map(
+    (documentId) => documentId.toString()
+  );
 
   await Message.create({
     chat: chatId,
@@ -31,7 +36,7 @@ export const askQuestionInChat = async ({ chatId, question }) => {
   });
 
   const response = await askQuestion({
-    document_id: documentId.toString(),
+    document_ids: documentIds,
     question,
   });
 
@@ -40,8 +45,6 @@ export const askQuestionInChat = async ({ chatId, question }) => {
     role: "assistant",
     content: response.answer,
   });
-
-  await Chat.findByIdAndUpdate(chatId, {});
 
   return response;
 };
@@ -57,13 +60,13 @@ export const getChatMessages = async (chatId) => {
 };
 
 export const getUserChats = async (userId) => {
-    const chats = await Chat.find({
-        user: userId,
-    }).sort({
-        updatedAt: -1,
-    });
+  const chats = await Chat.find({
+    user: userId,
+  }).sort({
+    updatedAt: -1,
+  });
 
-    return chats;
+  return chats;
 };
 
 export const getChatById = async (chatId, userId) => {

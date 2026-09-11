@@ -1,7 +1,7 @@
 import express from "express";
 import upload from "../middleware/upload.middleware.js";
 import { protect } from "../middleware/auth.middleware.js";
-import { uploadDocument, deleteDocument, getChatDocument } from "../controllers/document.controller.js";
+import { uploadDocument, deleteDocument, getChatDocuments } from "../controllers/document.controller.js";
 
 const router = express.Router();
 
@@ -13,7 +13,7 @@ router.post(
 );
 
 router.delete(
-    "/:chatId",
+    "/:chatId/:documentId",
     protect,
     deleteDocument
 );
@@ -21,7 +21,7 @@ router.delete(
 router.get(
     "/:chatId",
     protect,
-    getChatDocument
+    getChatDocuments
 );
 
 export default router;

@@ -7,7 +7,7 @@ import Sidebar from "../components/Sidebar";
 import { getMessages, askQuestion } from "../services/chat";
 import {
   uploadDocument,
-  getDocument,
+  getDocuments,
   deleteDocument,
 } from "../services/document";
 
@@ -19,7 +19,9 @@ function Chat() {
   const [messages, setMessages] = useState([]);
   const [question, setQuestion] = useState("");
 
-  const [document, setDocument] = useState(null);
+  // Changed from single document to multiple documents
+  const [documents, setDocuments] = useState([]);
+
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [asking, setAsking] = useState(false);
@@ -47,11 +49,16 @@ function Chat() {
     }
   };
 
-  const fetchDocument = async () => {
-    try {
-      const response = await getDocument(chatId);
 
-      setDocument(response.document);
+  // =========================
+  // Fetch Documents
+  // =========================
+
+  const fetchDocuments = async () => {
+    try {
+      const response = await getDocuments(chatId);
+
+      setDocuments(response.documents);
 
     } catch (error) {
       console.error(
@@ -74,7 +81,7 @@ function Chat() {
 
   useEffect(() => {
     fetchMessages();
-    fetchDocument();
+    fetchDocuments();
   }, [chatId]);
 
 
@@ -109,7 +116,10 @@ function Chat() {
 
       console.log(response);
 
-      setDocument(response.document);
+      // Refresh document list
+      await fetchDocuments();
+
+      // Refresh sidebar
       setChatRefresh((prev) => prev + 1);
 
     } catch (error) {
@@ -138,7 +148,7 @@ function Chat() {
   // Delete Document
   // =========================
 
-  const handleDeleteDocument = async () => {
+  const handleDeleteDocument = async (documentId) => {
 
     const confirmDelete = window.confirm(
       "Are you sure you want to remove this document?"
@@ -150,14 +160,21 @@ function Chat() {
 
       setDeleting(true);
 
-      const response = await deleteDocument(chatId);
+      const response = await deleteDocument(
+        chatId,
+        documentId
+      );
 
       console.log(response);
 
-      setDocument(null);
+      // Refresh document list
+      await fetchDocuments();
 
       // Refresh messages
       await fetchMessages();
+
+      // Refresh sidebar
+      setChatRefresh((prev) => prev + 1);
 
     } catch (error) {
 
@@ -185,6 +202,12 @@ function Chat() {
   const handleSend = async () => {
 
     if (!question.trim()) return;
+
+    // Don't allow question without documents
+    if (documents.length === 0) {
+      alert("Please upload a PDF first.");
+      return;
+    }
 
     try {
 
@@ -250,54 +273,125 @@ function Chat() {
 
         {/* Sidebar */}
 
-        <Sidebar chatId={chatId} refreshTrigger={chatRefresh} />
+        <Sidebar
+          chatId={chatId}
+          refreshTrigger={chatRefresh}
+        />
+
 
         {/* Main Chat */}
 
         <main className="chat-main">
 
+
           {/* Document Area */}
 
           <div className="document-area">
 
-            {document ? (
+            {documents.length > 0 ? (
 
-              <div className="document-card">
+              <>
 
-                <div className="document-info">
+                {/* Existing document cards */}
 
-                  <div className="document-icon">
+                {documents.map((document) => (
+
+                  <div
+                    key={document._id}
+                    className="document-card"
+                  >
+
+                    <div className="document-info">
+
+                      <div className="document-icon">
+                        📄
+                      </div>
+
+                      <div>
+
+                        <h4>
+                          {document.originalFileName}
+                        </h4>
+
+                        <p>
+                          {document.processingStatus ===
+                          "completed"
+                            ? "Document ready"
+                            : document.processingStatus}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+
+                    <button
+                      className="delete-document-button"
+                      onClick={() =>
+                        handleDeleteDocument(
+                          document._id
+                        )
+                      }
+                      disabled={deleting}
+                    >
+                      {deleting
+                        ? "Removing..."
+                        : "Remove"}
+                    </button>
+
+                  </div>
+
+                ))}
+
+
+                {/* Upload another PDF */}
+
+                <div className="upload-card">
+
+                  <div className="upload-icon">
                     📄
                   </div>
 
-                  <div>
+                  <div className="upload-content">
 
-                    <h4>
-                      {document.originalFileName}
-                    </h4>
+                    <h3>
+                      Add More Study Material
+                    </h3>
 
                     <p>
-                      Document ready
+                      Upload another PDF to use
+                      multiple study materials.
                     </p>
 
                   </div>
 
+                  <button
+                    className="upload-button"
+                    onClick={() =>
+                      fileInputRef.current.click()
+                    }
+                    disabled={uploading}
+                  >
+                    {uploading
+                      ? "Uploading..."
+                      : "Upload PDF"}
+                  </button>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf"
+                    hidden
+                    onChange={handleUpload}
+                  />
+
                 </div>
 
-
-                <button
-                  className="delete-document-button"
-                  onClick={handleDeleteDocument}
-                  disabled={deleting}
-                >
-                  {deleting
-                    ? "Removing..."
-                    : "Remove"}
-                </button>
-
-              </div>
+              </>
 
             ) : (
+
+              /* No document */
 
               <div className="upload-card">
 
@@ -374,10 +468,11 @@ function Chat() {
 
                 <div
                   key={message._id}
-                  className={`chat-message ${message.role === "user"
-                    ? "user-message"
-                    : "assistant-message"
-                    }`}
+                  className={`chat-message ${
+                    message.role === "user"
+                      ? "user-message"
+                      : "assistant-message"
+                  }`}
                 >
 
                   <div className="message-avatar">
@@ -460,8 +555,8 @@ function Chat() {
               <input
                 type="text"
                 placeholder={
-                  document
-                    ? "Ask anything about your study material..."
+                  documents.length > 0
+                    ? "Ask anything about your study materials..."
                     : "Upload a PDF first..."
                 }
                 value={question}
@@ -469,13 +564,16 @@ function Chat() {
                   setQuestion(e.target.value)
                 }
                 onKeyDown={handleKeyDown}
-                disabled={!document || asking}
+                disabled={
+                  documents.length === 0 ||
+                  asking
+                }
               />
 
               <button
                 onClick={handleSend}
                 disabled={
-                  !document ||
+                  documents.length === 0 ||
                   !question.trim() ||
                   asking
                 }

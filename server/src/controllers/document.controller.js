@@ -1,7 +1,7 @@
 import {
     uploadDocument as uploadDocumentService,
     deleteDocument as deleteDocumentService,
-     getChatDocument as getChatDocumentService
+    getChatDocuments as getChatDocumentsService
 } from "../services/document.service.js";
 
 
@@ -28,15 +28,15 @@ export const uploadDocument = async (req, res) => {
     }
 };
 
-
 export const deleteDocument = async (req, res) => {
 
     try {
 
-        const { chatId } = req.params;
+        const { chatId, documentId } = req.params;
 
         const document = await deleteDocumentService({
             chatId,
+            documentId,
             user: req.user,
         });
 
@@ -56,18 +56,18 @@ export const deleteDocument = async (req, res) => {
     }
 };
 
-export const getChatDocument = async (req, res) => {
+export const getChatDocuments = async (req, res) => {
     try {
         const { chatId } = req.params;
 
-        const document = await getChatDocumentService({
+        const documents = await getChatDocumentsService({
             chatId,
             user: req.user,
         });
 
         res.status(200).json({
             success: true,
-            document,
+            documents,
         });
 
     } catch (error) {

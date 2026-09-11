@@ -27,17 +27,21 @@ export const uploadDocument = async (chatId, file) => {
   return response.data;
 };
 
-
-export const deleteDocument = async (chatId) => {
-  const response = await API.delete(
+export const getDocuments = async (chatId) => {
+  const response = await API.get(
     `/documents/${chatId}`
   );
 
   return response.data;
 };
 
-export const getDocument = async (chatId) => {
-  const response = await API.get(`/documents/${chatId}`);
+export const deleteDocument = async (
+  chatId,
+  documentId
+) => {
+  const response = await API.delete(
+    `/documents/${chatId}/${documentId}`
+  );
 
   return response.data;
 };

@@ -3,10 +3,16 @@ from app.services.chroma_service import search_similar_chunks
 from app.services.gemini_service import generate_response
 
 
-def answer_question(document_id: str, question: str):
+def answer_question(document_ids: list[str], question: str):
+
     question_embedding = create_query_embedding(question)
-    search_results = search_similar_chunks(question_embedding, document_id)
-    retrieved_chunks = search_results["documents"][0]
+
+    search_results = search_similar_chunks(question_embedding, document_ids)
+
+    retrieved_chunks = search_results.get("documents", [[]])[0]
+
+    if not retrieved_chunks:
+        return "I couldn't find that information in the uploaded documents."
 
     context = "\n\n".join(retrieved_chunks)
 
@@ -16,7 +22,7 @@ You are an AI Study Assistant.
 Answer the user's question using ONLY the context provided below.
 
 If the answer is not present in the context, reply exactly:
-"I couldn't find that information in the uploaded document."
+"I couldn't find that information in the uploaded documents."
 
 Context:
 ----------------
@@ -28,6 +34,7 @@ Question:
 
 Answer:
 """
+
     answer = generate_response(prompt)
 
     return answer
