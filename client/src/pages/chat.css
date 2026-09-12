@@ -299,21 +299,44 @@
 
 .message-content {
   max-width: 70%;
-
   padding: 12px 15px;
-
   border-radius: 10px;
-
   background: white;
-
   border: 1px solid #e2e8f0;
+
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .user-message .message-content {
-  background: lightblue;
+  background: #e8f4f8;
   color: black;
-
   border: none;
+}
+
+.message-content p {
+  margin: 0 0 10px;
+}
+
+.message-content ul,
+.message-content ol {
+  margin: 8px 0 10px;
+  padding-left: 22px;
+}
+
+.message-content li {
+  margin-bottom: 5px;
+}
+
+.message-content strong {
+  font-weight: 600;
+}
+
+.message-content h1,
+.message-content h2,
+.message-content h3 {
+  margin: 12px 0 8px;
+  font-size: 15px;
 }
 
 .message-role {
@@ -371,6 +394,7 @@
 }
 
 @keyframes thinking {
+
   0%,
   60%,
   100% {

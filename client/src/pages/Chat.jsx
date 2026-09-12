@@ -1,3 +1,4 @@
+import ReactMarkdown from "react-markdown";
 import { useParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 
@@ -315,7 +316,7 @@ function Chat() {
 
                         <p>
                           {document.processingStatus ===
-                          "completed"
+                            "completed"
                             ? "Document ready"
                             : document.processingStatus}
                         </p>
@@ -468,11 +469,10 @@ function Chat() {
 
                 <div
                   key={message._id}
-                  className={`chat-message ${
-                    message.role === "user"
+                  className={`chat-message ${message.role === "user"
                       ? "user-message"
                       : "assistant-message"
-                  }`}
+                    }`}
                 >
 
                   <div className="message-avatar">
@@ -484,19 +484,19 @@ function Chat() {
                   </div>
 
                   <div className="message-content">
-
                     <div className="message-role">
-
                       {message.role === "user"
                         ? "You"
                         : "Graspify AI"}
-
                     </div>
 
-                    <p>
-                      {message.content}
-                    </p>
-
+                    {message.role === "assistant" ? (
+                      <ReactMarkdown>
+                        {message.content}
+                      </ReactMarkdown>
+                    ) : (
+                      <p>{message.content}</p>
+                    )}
                   </div>
 
                 </div>
