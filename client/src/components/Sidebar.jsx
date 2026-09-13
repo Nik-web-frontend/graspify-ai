@@ -2,7 +2,12 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { createChat, getChats, renameChat, deleteChat } from "../services/chat";
 
-const Sidebar = ({ chatId, refreshTrigger = 0 }) => {
+const Sidebar = ({
+  chatId,
+  refreshTrigger = 0,
+  hasDocuments = false,
+  onSummaryClick,
+}) => {
   const navigate = useNavigate();
 
   const [chats, setChats] = useState([]);
@@ -270,7 +275,11 @@ const Sidebar = ({ chatId, refreshTrigger = 0 }) => {
           <span>Documents</span>
         </button>
 
-        <button className="sidebar-tool">
+        <button
+          className="sidebar-tool"
+          onClick={onSummaryClick}
+          disabled={!chatId || !hasDocuments}
+        >
           📝
           <span>Summaries</span>
         </button>

@@ -10,6 +10,7 @@ import {
   uploadDocument,
   getDocuments,
   deleteDocument,
+  generateSummary
 } from "../services/document";
 
 import "./chat.css";
@@ -31,6 +32,11 @@ function Chat() {
 
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
+
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [summaryOption, setSummaryOption] = useState("all");
+  const [selectedDocumentId, setSelectedDocumentId] = useState("");
+  const [generatingSummary, setGeneratingSummary] = useState(false);
 
 
   // =========================
@@ -195,6 +201,55 @@ function Chat() {
     }
   };
 
+  // =========================
+  // Generate Summary
+  // =========================
+
+  const handleGenerateSummary = async () => {
+    let documentIds = [];
+
+    if (summaryOption === "all") {
+      documentIds = documents.map(
+        (document) => document._id
+      );
+    } else {
+      if (!selectedDocumentId) {
+        alert("Please select a document.");
+        return;
+      }
+
+      documentIds = [selectedDocumentId];
+    }
+
+    try {
+      setGeneratingSummary(true);
+
+      await generateSummary(
+        chatId,
+        documentIds
+      );
+
+      await fetchMessages();
+
+      setShowSummaryModal(false);
+      setSummaryOption("all");
+      setSelectedDocumentId("");
+
+    } catch (error) {
+      console.error(
+        error.response?.data || error.message
+      );
+
+      alert(
+        error.response?.data?.message ||
+        "Failed to generate summary."
+      );
+
+    } finally {
+      setGeneratingSummary(false);
+    }
+  };
+
 
   // =========================
   // Ask Question
@@ -277,6 +332,8 @@ function Chat() {
         <Sidebar
           chatId={chatId}
           refreshTrigger={chatRefresh}
+          hasDocuments={documents.length > 0}
+          onSummaryClick={() => setShowSummaryModal(true)}
         />
 
 
@@ -470,8 +527,8 @@ function Chat() {
                 <div
                   key={message._id}
                   className={`chat-message ${message.role === "user"
-                      ? "user-message"
-                      : "assistant-message"
+                    ? "user-message"
+                    : "assistant-message"
                     }`}
                 >
 
@@ -544,7 +601,113 @@ function Chat() {
             <div ref={messagesEndRef}></div>
 
           </div>
+          {/* Summary Modal */}
 
+          {showSummaryModal && (
+            <div className="summary-modal-overlay">
+
+              <div className="summary-modal">
+
+                <h3>
+                  Generate Summary
+                </h3>
+
+                <p>
+                  Choose which study material you want to summarize.
+                </p>
+
+                <label className="summary-option">
+                  <input
+                    type="radio"
+                    name="summaryOption"
+                    value="all"
+                    checked={summaryOption === "all"}
+                    onChange={() => {
+                      setSummaryOption("all");
+                      setSelectedDocumentId("");
+                    }}
+                  />
+
+                  <span>
+                    All Documents
+                  </span>
+                </label>
+
+                <label className="summary-option">
+                  <input
+                    type="radio"
+                    name="summaryOption"
+                    value="single"
+                    checked={summaryOption === "single"}
+                    onChange={() =>
+                      setSummaryOption("single")
+                    }
+                  />
+
+                  <span>
+                    Select a Document
+                  </span>
+                </label>
+
+                {summaryOption === "single" && (
+                  <select
+                    className="summary-document-select"
+                    value={selectedDocumentId}
+                    onChange={(e) =>
+                      setSelectedDocumentId(e.target.value)
+                    }
+                  >
+                    <option value="">
+                      Select a document
+                    </option>
+
+                    {documents.map((document) => (
+                      <option
+                        key={document._id}
+                        value={document._id}
+                      >
+                        {document.originalFileName}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                <div className="summary-modal-actions">
+
+                  <button
+                    className="summary-cancel-button"
+                    onClick={() => {
+                      setShowSummaryModal(false);
+                      setSummaryOption("all");
+                      setSelectedDocumentId("");
+                    }}
+                    disabled={generatingSummary}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="summary-generate-button"
+                    onClick={handleGenerateSummary}
+                    disabled={
+                      generatingSummary ||
+                      (
+                        summaryOption === "single" &&
+                        !selectedDocumentId
+                      )
+                    }
+                  >
+                    {generatingSummary
+                      ? "Generating..."
+                      : "Generate"}
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+          )}
 
           {/* Question Input */}
 

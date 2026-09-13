@@ -7,7 +7,8 @@ import {
     getChats,
     getChat,
     renameChat,
-    deleteChat
+    deleteChat,
+    createSummaryController
 } from "../controllers/chat.controller.js";
 
 const router = express.Router();
@@ -25,5 +26,11 @@ router.get("/:chatId", protect, getChat);
 router.patch("/:chatId", protect, renameChat);
 
 router.delete("/:chatId", protect, deleteChat);
+
+router.post(
+    "/:chatId/summary",
+    protect,
+    createSummaryController
+);
 
 export default router;

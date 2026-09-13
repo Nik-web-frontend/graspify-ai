@@ -3,7 +3,13 @@ import {
     renameChat as renameChatService,
     deleteChat as deleteChatService
 } from "../services/chat.service.js";
-import { askQuestionInChat, getChatMessages, getUserChats, getChatById } from "../services/chat.service.js";
+import {
+    askQuestionInChat,
+    getChatMessages,
+    getUserChats,
+    getChatById,
+    createSummary
+} from "../services/chat.service.js";
 
 export const createChat = async (req, res) => {
     try {
@@ -150,6 +156,29 @@ export const deleteChat = async (req, res) => {
 
     } catch (error) {
         res.status(404).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+export const createSummaryController = async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        const { documentIds } = req.body;
+
+        const summary = await createSummary({
+            chatId,
+            documentIds,
+            user: req.user,
+        });
+
+        res.status(200).json({
+            success: true,
+            summary,
+        });
+    } catch (error) {
+        res.status(400).json({
             success: false,
             message: error.message,
         });

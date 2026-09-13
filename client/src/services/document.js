@@ -45,3 +45,17 @@ export const deleteDocument = async (
 
   return response.data;
 };
+
+export const generateSummary = async (
+  chatId,
+  documentIds
+) => {
+  const response = await API.post(
+    `/chats/${chatId}/summary`,
+    {
+      documentIds,
+    }
+  );
+
+  return response.data;
+};

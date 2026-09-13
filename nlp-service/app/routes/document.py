@@ -13,6 +13,7 @@ from app.services.chroma_service import (
 )
 from app.services.gemini_service import generate_response
 from app.services.rag_service import answer_question
+from app.services.summary_service import generate_summary
 
 router = APIRouter()
 
@@ -31,6 +32,10 @@ class QueryRequest(BaseModel):
 class QuestionRequest(BaseModel):
     document_ids: list[str]
     question: str
+
+
+class SummaryRequest(BaseModel):
+    document_ids: list[str]
 
 
 @router.post("/extract-text")
@@ -88,6 +93,17 @@ def ask_question(request: QuestionRequest):
         "success": True,
         "question": request.question,
         "answer": answer,
+    }
+
+
+@router.post("/summary")
+def create_summary(request: SummaryRequest):
+
+    summary = generate_summary(request.document_ids)
+
+    return {
+        "success": True,
+        "summary": summary,
     }
 
 
