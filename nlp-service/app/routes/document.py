@@ -14,6 +14,7 @@ from app.services.chroma_service import (
 from app.services.gemini_service import generate_response
 from app.services.rag_service import answer_question
 from app.services.summary_service import generate_summary
+from app.services.notes_service import generate_notes
 
 router = APIRouter()
 
@@ -104,6 +105,17 @@ def create_summary(request: SummaryRequest):
     return {
         "success": True,
         "summary": summary,
+    }
+
+
+@router.post("/notes")
+def create_notes(request: SummaryRequest):
+
+    notes = generate_notes(request.document_ids)
+
+    return {
+        "success": True,
+        "notes": notes,
     }
 
 

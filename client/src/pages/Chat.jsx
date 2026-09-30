@@ -10,7 +10,8 @@ import {
   uploadDocument,
   getDocuments,
   deleteDocument,
-  generateSummary
+  generateSummary,
+  generateNotes
 } from "../services/document";
 
 import "./chat.css";
@@ -37,6 +38,11 @@ function Chat() {
   const [summaryOption, setSummaryOption] = useState("all");
   const [selectedDocumentId, setSelectedDocumentId] = useState("");
   const [generatingSummary, setGeneratingSummary] = useState(false);
+
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [notesOption, setNotesOption] = useState("all");
+  const [selectedNotesDocumentId, setSelectedNotesDocumentId] = useState("");
+  const [generatingNotes, setGeneratingNotes] = useState(false);
 
 
   // =========================
@@ -250,6 +256,51 @@ function Chat() {
     }
   };
 
+  const handleGenerateNotes = async () => {
+    let documentIds = [];
+
+    if (notesOption === "all") {
+      documentIds = documents.map(
+        (document) => document._id
+      );
+    } else {
+      if (!selectedNotesDocumentId) {
+        alert("Please select a document.");
+        return;
+      }
+
+      documentIds = [selectedNotesDocumentId];
+    }
+
+    try {
+      setGeneratingNotes(true);
+
+      await generateNotes(
+        chatId,
+        documentIds
+      );
+
+      await fetchMessages();
+
+      setShowNotesModal(false);
+      setNotesOption("all");
+      setSelectedNotesDocumentId("");
+
+    } catch (error) {
+      console.error(
+        error.response?.data || error.message
+      );
+
+      alert(
+        error.response?.data?.message ||
+        "Failed to generate study notes."
+      );
+
+    } finally {
+      setGeneratingNotes(false);
+    }
+  };
+
 
   // =========================
   // Ask Question
@@ -334,6 +385,7 @@ function Chat() {
           refreshTrigger={chatRefresh}
           hasDocuments={documents.length > 0}
           onSummaryClick={() => setShowSummaryModal(true)}
+          onNotesClick={() => setShowNotesModal(true)}
         />
 
 
@@ -698,6 +750,106 @@ function Chat() {
                     }
                   >
                     {generatingSummary
+                      ? "Generating..."
+                      : "Generate"}
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+          )}
+
+          {showNotesModal && (
+            <div className="summary-modal-overlay">
+
+              <div className="summary-modal">
+
+                <h3>
+                  Generate Study Notes
+                </h3>
+
+                <p>
+                  Choose which study material you want to turn into structured notes.
+                </p>
+
+                <label className="summary-option">
+                  <input
+                    type="radio"
+                    name="notesOption"
+                    value="all"
+                    checked={notesOption === "all"}
+                    onChange={() => {
+                      setNotesOption("all");
+                      setSelectedNotesDocumentId("");
+                    }}
+                  />
+                  <span>All Documents</span>
+                </label>
+
+                <label className="summary-option">
+                  <input
+                    type="radio"
+                    name="notesOption"
+                    value="single"
+                    checked={notesOption === "single"}
+                    onChange={() =>
+                      setNotesOption("single")
+                    }
+                  />
+                  <span>Select a Document</span>
+                </label>
+
+                {notesOption === "single" && (
+                  <select
+                    className="summary-document-select"
+                    value={selectedNotesDocumentId}
+                    onChange={(e) =>
+                      setSelectedNotesDocumentId(e.target.value)
+                    }
+                  >
+                    <option value="">
+                      Select a document
+                    </option>
+
+                    {documents.map((document) => (
+                      <option
+                        key={document._id}
+                        value={document._id}
+                      >
+                        {document.originalFileName}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                <div className="summary-modal-actions">
+
+                  <button
+                    className="summary-cancel-button"
+                    onClick={() => {
+                      setShowNotesModal(false);
+                      setNotesOption("all");
+                      setSelectedNotesDocumentId("");
+                    }}
+                    disabled={generatingNotes}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="summary-generate-button"
+                    onClick={handleGenerateNotes}
+                    disabled={
+                      generatingNotes ||
+                      (
+                        notesOption === "single" &&
+                        !selectedNotesDocumentId
+                      )
+                    }
+                  >
+                    {generatingNotes
                       ? "Generating..."
                       : "Generate"}
                   </button>

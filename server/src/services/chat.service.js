@@ -1,5 +1,5 @@
 import Chat from "../models/chat.model.js";
-import { askQuestion, deleteDocumentFromPython, generateSummary } from "./python.service.js";
+import { askQuestion, deleteDocumentFromPython, generateSummary, generateNotes } from "./python.service.js";
 import Message from "../models/message.model.js";
 import Document from "../models/document.model.js";
 import fs from "fs/promises";
@@ -194,4 +194,57 @@ export const createSummary = async ({
   });
 
   return summary;
+};
+
+export const createNotes = async ({
+  chatId,
+  documentIds,
+  user,
+}) => {
+  const chat = await Chat.findOne({
+    _id: chatId,
+    user: user._id,
+  });
+
+  if (!chat) {
+    throw new Error("Chat not found.");
+  }
+
+  if (!documentIds || documentIds.length === 0) {
+    throw new Error("Please select at least one document.");
+  }
+
+  const chatDocumentIds = chat.documents.map(
+    (id) => id.toString()
+  );
+
+  const invalidDocument = documentIds.some(
+    (id) => !chatDocumentIds.includes(id)
+  );
+
+  if (invalidDocument) {
+    throw new Error(
+      "One or more selected documents do not belong to this chat."
+    );
+  }
+
+  await Message.create({
+    chat: chatId,
+    role: "user",
+    content: "Generate structured study notes",
+  });
+
+  const response = await generateNotes({
+    document_ids: documentIds,
+  });
+
+  const notes = response.notes;
+
+  await Message.create({
+    chat: chatId,
+    role: "assistant",
+    content: notes,
+  });
+
+  return notes;
 };

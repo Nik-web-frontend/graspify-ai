@@ -27,6 +27,15 @@ export const generateSummary = async (data) => {
     return response.data;
 };
 
+export const generateNotes = async (data) => {
+    const response = await axios.post(
+        "http://127.0.0.1:8000/notes",
+        data
+    );
+
+    return response.data;
+};
+
 export const deleteDocumentFromPython = async (documentId) => {
     const response = await axios.delete(
         `http://127.0.0.1:8000/document/${documentId}`

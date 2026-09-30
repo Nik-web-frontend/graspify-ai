@@ -59,3 +59,17 @@ export const generateSummary = async (
 
   return response.data;
 };
+
+export const generateNotes = async (
+  chatId,
+  documentIds
+) => {
+  const response = await API.post(
+    `/chats/${chatId}/notes`,
+    {
+      documentIds,
+    }
+  );
+
+  return response.data;
+};

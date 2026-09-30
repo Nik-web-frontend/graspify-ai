@@ -7,6 +7,7 @@ const Sidebar = ({
   refreshTrigger = 0,
   hasDocuments = false,
   onSummaryClick,
+  onNotesClick
 }) => {
   const navigate = useNavigate();
 
@@ -282,6 +283,15 @@ const Sidebar = ({
         >
           📝
           <span>Summaries</span>
+        </button>
+
+        <button
+          className="sidebar-tool"
+          onClick={onNotesClick}
+          disabled={!chatId || !hasDocuments}
+        >
+          📚
+          <span>Notes</span>
         </button>
 
         <button className="sidebar-tool">
