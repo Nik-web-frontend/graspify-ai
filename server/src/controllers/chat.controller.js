@@ -9,7 +9,8 @@ import {
     getUserChats,
     getChatById,
     createSummary,
-    createNotes
+    createNotes,
+    createFlashcards
 } from "../services/chat.service.js";
 
 export const createChat = async (req, res) => {
@@ -187,24 +188,47 @@ export const createSummaryController = async (req, res) => {
 };
 
 export const createNotesController = async (req, res) => {
-  try {
-    const { chatId } = req.params;
-    const { documentIds } = req.body;
+    try {
+        const { chatId } = req.params;
+        const { documentIds } = req.body;
 
-    const notes = await createNotes({
-      chatId,
-      documentIds,
-      user: req.user,
-    });
+        const notes = await createNotes({
+            chatId,
+            documentIds,
+            user: req.user,
+        });
 
-    res.status(200).json({
-      success: true,
-      notes,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
+        res.status(200).json({
+            success: true,
+            notes,
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+export const createFlashcardsController = async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        const { documentIds } = req.body;
+
+        const flashcards = await createFlashcards({
+            chatId,
+            documentIds,
+            user: req.user,
+        });
+
+        res.status(200).json({
+            success: true,
+            flashcards,
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message,
+        });
+    }
 };

@@ -11,7 +11,8 @@ import {
   getDocuments,
   deleteDocument,
   generateSummary,
-  generateNotes
+  generateNotes,
+  generateFlashcards
 } from "../services/document";
 
 import "./chat.css";
@@ -44,6 +45,14 @@ function Chat() {
   const [selectedNotesDocumentId, setSelectedNotesDocumentId] = useState("");
   const [generatingNotes, setGeneratingNotes] = useState(false);
 
+
+  const [showFlashcardsModal, setShowFlashcardsModal] = useState(false);
+  const [flashcardsOption, setFlashcardsOption] = useState("all");
+  const [selectedFlashcardDocumentId, setSelectedFlashcardDocumentId] = useState("");
+  const [generatingFlashcards, setGeneratingFlashcards] = useState(false);
+
+
+  const [flippedCards, setFlippedCards] = useState({});
 
   // =========================
   // Fetch Messages
@@ -301,6 +310,51 @@ function Chat() {
     }
   };
 
+  const handleGenerateFlashcards = async () => {
+    let documentIds = [];
+
+    if (flashcardsOption === "all") {
+      documentIds = documents.map(
+        (document) => document._id
+      );
+    } else {
+      if (!selectedFlashcardDocumentId) {
+        alert("Please select a document.");
+        return;
+      }
+
+      documentIds = [selectedFlashcardDocumentId];
+    }
+
+    try {
+      setGeneratingFlashcards(true);
+
+      await generateFlashcards(
+        chatId,
+        documentIds
+      );
+
+      await fetchMessages();
+
+      setShowFlashcardsModal(false);
+      setFlashcardsOption("all");
+      setSelectedFlashcardDocumentId("");
+
+    } catch (error) {
+      console.error(
+        error.response?.data || error.message
+      );
+
+      alert(
+        error.response?.data?.message ||
+        "Failed to generate flashcards."
+      );
+
+    } finally {
+      setGeneratingFlashcards(false);
+    }
+  };
+
 
   // =========================
   // Ask Question
@@ -367,6 +421,45 @@ function Chat() {
     }
   };
 
+  const isFlashcardMessage = (content) => {
+    return (
+      content.includes("### Flashcard 1") &&
+      content.includes("**Question:**") &&
+      content.includes("**Answer:**")
+    );
+  };
+
+  const parseFlashcards = (content) => {
+    const cards = content
+      .split(/### Flashcard \d+/)
+      .slice(1);
+
+    return cards
+      .map((card) => {
+        const questionMatch = card.match(
+          /\*\*Question:\*\*\s*(.*)/
+        );
+
+        const answerMatch = card.match(
+          /\*\*Answer:\*\*\s*([\s\S]*?)(?=\n###|\s*$)/
+        );
+
+        return {
+          question: questionMatch
+            ? questionMatch[1].trim()
+            : "",
+          answer: answerMatch
+            ? answerMatch[1].trim()
+            : "",
+        };
+      })
+      .filter(
+        (card) =>
+          card.question &&
+          card.answer
+      );
+  };
+
 
   return (
     <div className="chat-page">
@@ -386,6 +479,7 @@ function Chat() {
           hasDocuments={documents.length > 0}
           onSummaryClick={() => setShowSummaryModal(true)}
           onNotesClick={() => setShowNotesModal(true)}
+          onFlashcardsClick={() => setShowFlashcardsModal(true)}
         />
 
 
@@ -573,44 +667,142 @@ function Chat() {
               </div>
 
             ) : (
+              
+                messages.map((message) => {
 
-              messages.map((message) => (
+                  const isFlashcard =
+                    message.role === "assistant" &&
+                    isFlashcardMessage(message.content);
 
-                <div
-                  key={message._id}
-                  className={`chat-message ${message.role === "user"
-                    ? "user-message"
-                    : "assistant-message"
-                    }`}
-                >
+                  return isFlashcard ? (
 
-                  <div className="message-avatar">
+                    <div
+                      key={message._id}
+                      className="chat-message assistant-message flashcard-message"
+                    >
 
-                    {message.role === "user"
-                      ? "Y"
-                      : "G"}
+                      <div className="message-avatar">
+                        G
+                      </div>
 
-                  </div>
+                      <div className="flashcard-message-body">
 
-                  <div className="message-content">
-                    <div className="message-role">
-                      {message.role === "user"
-                        ? "You"
-                        : "Graspify AI"}
+                        <div className="message-role">
+                          Graspify AI
+                        </div>
+
+                        <div className="flashcards-container">
+
+                          {parseFlashcards(message.content).map(
+                            (card, index) => {
+
+                              const cardKey =
+                                `${message._id}-${index}`;
+
+                              const isFlipped =
+                                flippedCards[cardKey];
+
+                              return (
+                                <div
+                                  key={cardKey}
+                                  className={`flashcard ${isFlipped ? "flipped" : ""
+                                    }`}
+                                  onClick={() => {
+                                    setFlippedCards((prev) => ({
+                                      ...prev,
+                                      [cardKey]: !prev[cardKey],
+                                    }));
+                                  }}
+                                >
+
+                                  <div className="flashcard-inner">
+
+                                    <div className="flashcard-front">
+
+                                      <span className="flashcard-label">
+                                        Question
+                                      </span>
+
+                                      <p>
+                                        {card.question}
+                                      </p>
+
+                                      <span className="flashcard-hint">
+                                        Click to reveal answer
+                                      </span>
+
+                                    </div>
+
+                                    <div className="flashcard-back">
+
+                                      <span className="flashcard-label">
+                                        Answer
+                                      </span>
+
+                                      <p>
+                                        {card.answer}
+                                      </p>
+
+                                      <span className="flashcard-hint">
+                                        Click to see question
+                                      </span>
+
+                                    </div>
+
+                                  </div>
+
+                                </div>
+                              );
+                            }
+                          )}
+
+                        </div>
+
+                      </div>
+
                     </div>
 
-                    {message.role === "assistant" ? (
-                      <ReactMarkdown>
-                        {message.content}
-                      </ReactMarkdown>
-                    ) : (
-                      <p>{message.content}</p>
-                    )}
-                  </div>
+                  ) : (
 
-                </div>
+                    <div
+                      key={message._id}
+                      className={`chat-message ${message.role === "user"
+                          ? "user-message"
+                          : "assistant-message"
+                        }`}
+                    >
 
-              ))
+                      <div className="message-avatar">
+
+                        {message.role === "user"
+                          ? "Y"
+                          : "G"}
+
+                      </div>
+
+                      <div className="message-content">
+
+                        <div className="message-role">
+                          {message.role === "user"
+                            ? "You"
+                            : "Graspify AI"}
+                        </div>
+
+                        {message.role === "assistant" ? (
+                          <ReactMarkdown>
+                            {message.content}
+                          </ReactMarkdown>
+                        ) : (
+                          <p>{message.content}</p>
+                        )}
+
+                      </div>
+
+                    </div>
+
+                  );
+                })
+              
 
             )}
 
@@ -850,6 +1042,106 @@ function Chat() {
                     }
                   >
                     {generatingNotes
+                      ? "Generating..."
+                      : "Generate"}
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+          )}
+
+          {showFlashcardsModal && (
+            <div className="summary-modal-overlay">
+
+              <div className="summary-modal">
+
+                <h3>
+                  Generate Flashcards
+                </h3>
+
+                <p>
+                  Choose which study material you want to turn into flashcards.
+                </p>
+
+                <label className="summary-option">
+                  <input
+                    type="radio"
+                    name="flashcardsOption"
+                    value="all"
+                    checked={flashcardsOption === "all"}
+                    onChange={() => {
+                      setFlashcardsOption("all");
+                      setSelectedFlashcardDocumentId("");
+                    }}
+                  />
+                  <span>All Documents</span>
+                </label>
+
+                <label className="summary-option">
+                  <input
+                    type="radio"
+                    name="flashcardsOption"
+                    value="single"
+                    checked={flashcardsOption === "single"}
+                    onChange={() =>
+                      setFlashcardsOption("single")
+                    }
+                  />
+                  <span>Select a Document</span>
+                </label>
+
+                {flashcardsOption === "single" && (
+                  <select
+                    className="summary-document-select"
+                    value={selectedFlashcardDocumentId}
+                    onChange={(e) =>
+                      setSelectedFlashcardDocumentId(e.target.value)
+                    }
+                  >
+                    <option value="">
+                      Select a document
+                    </option>
+
+                    {documents.map((document) => (
+                      <option
+                        key={document._id}
+                        value={document._id}
+                      >
+                        {document.originalFileName}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                <div className="summary-modal-actions">
+
+                  <button
+                    className="summary-cancel-button"
+                    onClick={() => {
+                      setShowFlashcardsModal(false);
+                      setFlashcardsOption("all");
+                      setSelectedFlashcardDocumentId("");
+                    }}
+                    disabled={generatingFlashcards}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="summary-generate-button"
+                    onClick={handleGenerateFlashcards}
+                    disabled={
+                      generatingFlashcards ||
+                      (
+                        flashcardsOption === "single" &&
+                        !selectedFlashcardDocumentId
+                      )
+                    }
+                  >
+                    {generatingFlashcards
                       ? "Generating..."
                       : "Generate"}
                   </button>

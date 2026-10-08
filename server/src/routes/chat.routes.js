@@ -9,7 +9,8 @@ import {
     renameChat,
     deleteChat,
     createSummaryController,
-    createNotesController
+    createNotesController,
+    createFlashcardsController
 } from "../controllers/chat.controller.js";
 
 const router = express.Router();
@@ -38,6 +39,12 @@ router.post(
     "/:chatId/notes",
     protect,
     createNotesController
+);
+
+router.post(
+    "/:chatId/flashcards",
+    protect,
+    createFlashcardsController
 );
 
 export default router;

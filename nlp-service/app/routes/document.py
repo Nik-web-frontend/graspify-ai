@@ -15,6 +15,7 @@ from app.services.gemini_service import generate_response
 from app.services.rag_service import answer_question
 from app.services.summary_service import generate_summary
 from app.services.notes_service import generate_notes
+from app.services.flashcard_service import generate_flashcards
 
 router = APIRouter()
 
@@ -116,6 +117,17 @@ def create_notes(request: SummaryRequest):
     return {
         "success": True,
         "notes": notes,
+    }
+
+
+@router.post("/flashcards")
+def create_flashcards(request: SummaryRequest):
+
+    flashcards = generate_flashcards(request.document_ids)
+
+    return {
+        "success": True,
+        "flashcards": flashcards,
     }
 
 

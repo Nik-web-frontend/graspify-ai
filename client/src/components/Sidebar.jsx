@@ -7,7 +7,8 @@ const Sidebar = ({
   refreshTrigger = 0,
   hasDocuments = false,
   onSummaryClick,
-  onNotesClick
+  onNotesClick,
+  onFlashcardsClick,
 }) => {
   const navigate = useNavigate();
 
@@ -294,10 +295,16 @@ const Sidebar = ({
           <span>Notes</span>
         </button>
 
-        <button className="sidebar-tool">
+
+        <button
+          className="sidebar-tool"
+          onClick={onFlashcardsClick}
+          disabled={!chatId || !hasDocuments}
+        >
           🧠
           <span>Flashcards</span>
         </button>
+
 
         <button className="sidebar-tool">
           ❓

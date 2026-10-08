@@ -43,3 +43,12 @@ export const deleteDocumentFromPython = async (documentId) => {
 
     return response.data;
 };
+
+export const generateFlashcards = async (data) => {
+  const response = await axios.post(
+    "http://127.0.0.1:8000/flashcards",
+    data
+  );
+
+  return response.data;
+};

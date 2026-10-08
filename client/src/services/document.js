@@ -73,3 +73,17 @@ export const generateNotes = async (
 
   return response.data;
 };
+
+export const generateFlashcards = async (
+  chatId,
+  documentIds
+) => {
+  const response = await API.post(
+    `/chats/${chatId}/flashcards`,
+    {
+      documentIds,
+    }
+  );
+
+  return response.data;
+};
