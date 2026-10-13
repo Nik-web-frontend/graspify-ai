@@ -45,10 +45,20 @@ export const deleteDocumentFromPython = async (documentId) => {
 };
 
 export const generateFlashcards = async (data) => {
-  const response = await axios.post(
-    "http://127.0.0.1:8000/flashcards",
-    data
-  );
+    const response = await axios.post(
+        "http://127.0.0.1:8000/flashcards",
+        data
+    );
 
-  return response.data;
+    return response.data;
+};
+
+
+export const generateQuiz = async (data) => {
+    const response = await axios.post(
+        "http://127.0.0.1:8000/quiz",
+        data
+    );
+
+    return response.data;
 };

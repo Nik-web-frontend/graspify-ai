@@ -10,7 +10,8 @@ import {
     getChatById,
     createSummary,
     createNotes,
-    createFlashcards
+    createFlashcards,
+    createQuiz
 } from "../services/chat.service.js";
 
 export const createChat = async (req, res) => {
@@ -231,4 +232,28 @@ export const createFlashcardsController = async (req, res) => {
             message: error.message,
         });
     }
+};
+
+
+export const createQuizController = async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const { documentIds } = req.body;
+
+    const quiz = await createQuiz({
+      chatId,
+      documentIds,
+      user: req.user,
+    });
+
+    res.status(200).json({
+      success: true,
+      quiz,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
 };

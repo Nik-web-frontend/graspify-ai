@@ -10,7 +10,8 @@ import {
     deleteChat,
     createSummaryController,
     createNotesController,
-    createFlashcardsController
+    createFlashcardsController,
+    createQuizController
 } from "../controllers/chat.controller.js";
 
 const router = express.Router();
@@ -45,6 +46,12 @@ router.post(
     "/:chatId/flashcards",
     protect,
     createFlashcardsController
+);
+
+router.post(
+    "/:chatId/quiz",
+    protect,
+    createQuizController
 );
 
 export default router;

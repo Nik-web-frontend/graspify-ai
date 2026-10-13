@@ -87,3 +87,18 @@ export const generateFlashcards = async (
 
   return response.data;
 };
+
+
+export const generateQuiz = async (
+  chatId,
+  documentIds
+) => {
+  const response = await API.post(
+    `/chats/${chatId}/quiz`,
+    {
+      documentIds,
+    }
+  );
+
+  return response.data;
+};

@@ -9,6 +9,7 @@ const Sidebar = ({
   onSummaryClick,
   onNotesClick,
   onFlashcardsClick,
+  onQuizClick,
 }) => {
   const navigate = useNavigate();
 
@@ -306,10 +307,21 @@ const Sidebar = ({
         </button>
 
 
-        <button className="sidebar-tool">
+
+        <button
+          className="sidebar-tool"
+          onClick={onQuizClick}
+          disabled={!chatId || !hasDocuments}
+          title={
+            !hasDocuments
+              ? "Upload a document first"
+              : "Generate a quiz"
+          }
+        >
           ❓
           <span>Quizzes</span>
         </button>
+
 
       </div>
 

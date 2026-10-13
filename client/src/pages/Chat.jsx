@@ -12,7 +12,8 @@ import {
   deleteDocument,
   generateSummary,
   generateNotes,
-  generateFlashcards
+  generateFlashcards,
+  generateQuiz
 } from "../services/document";
 
 import "./chat.css";
@@ -50,9 +51,17 @@ function Chat() {
   const [flashcardsOption, setFlashcardsOption] = useState("all");
   const [selectedFlashcardDocumentId, setSelectedFlashcardDocumentId] = useState("");
   const [generatingFlashcards, setGeneratingFlashcards] = useState(false);
-
-
   const [flippedCards, setFlippedCards] = useState({});
+
+
+  const [showQuizModal, setShowQuizModal] = useState(false);
+  const [quizOption, setQuizOption] = useState("all");
+  const [selectedQuizDocumentId, setSelectedQuizDocumentId] = useState("");
+  const [generatingQuiz, setGeneratingQuiz] = useState(false);
+
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [submittedQuizzes, setSubmittedQuizzes] = useState({});
+
 
   // =========================
   // Fetch Messages
@@ -356,6 +365,54 @@ function Chat() {
   };
 
 
+  const handleGenerateQuiz = async () => {
+    let documentIds = [];
+
+    if (quizOption === "all") {
+      documentIds = documents.map(
+        (document) => document._id
+      );
+    } else {
+      if (!selectedQuizDocumentId) {
+        alert("Please select a document.");
+        return;
+      }
+
+      documentIds = [selectedQuizDocumentId];
+    }
+
+    if (documentIds.length === 0) {
+      alert("Please upload a document first.");
+      return;
+    }
+
+    try {
+      setGeneratingQuiz(true);
+
+      await generateQuiz(chatId, documentIds);
+
+      await fetchMessages();
+
+      setShowQuizModal(false);
+      setQuizOption("all");
+      setSelectedQuizDocumentId("");
+    } catch (error) {
+      console.error(
+        "Quiz generation error:",
+        error.response?.data || error.message
+      );
+
+      alert(
+        error.response?.data?.message ||
+        "Failed to generate quiz."
+      );
+    } finally {
+      setGeneratingQuiz(false);
+    }
+  };
+
+
+
   // =========================
   // Ask Question
   // =========================
@@ -461,6 +518,81 @@ function Chat() {
   };
 
 
+  const parseQuiz = (content) => {
+    try {
+      const parsed = JSON.parse(content);
+
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        return null;
+      }
+
+      const isValidQuiz = parsed.every(
+        (item) =>
+          item &&
+          typeof item.question === "string" &&
+          Array.isArray(item.options) &&
+          item.options.length === 4 &&
+          typeof item.correct_answer === "string" &&
+          typeof item.explanation === "string"
+      );
+
+      return isValidQuiz ? parsed : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const isQuizMessage = (message) => {
+    if (message.role !== "assistant") {
+      return false;
+    }
+
+    return parseQuiz(message.content) !== null;
+  };
+
+
+  const getCorrectOption = (item) => {
+    const correctAnswer = String(
+      item.correct_answer || ""
+    ).trim();
+
+    // Case 1: The correct answer is the complete option text.
+    const exactOption = item.options.find(
+      (option) =>
+        option.trim().toLowerCase() ===
+        correctAnswer.toLowerCase()
+    );
+
+    if (exactOption) {
+      return exactOption;
+    }
+
+    // Case 2: The correct answer is A, B, C, or D.
+    const letterMatch = correctAnswer.match(
+      /^(?:option\s*)?([A-D])(?:[\s).:-]|$)/i
+    );
+
+    if (letterMatch) {
+      return item.options[
+        letterMatch[1].toUpperCase().charCodeAt(0) - 65
+      ];
+    }
+
+    // Case 3: The correct answer is option 1, 2, 3, or 4.
+    const numberMatch = correctAnswer.match(
+      /^(?:option\s*)?([1-4])(?:[\s).:-]|$)/i
+    );
+
+    if (numberMatch) {
+      return item.options[Number(numberMatch[1]) - 1];
+    }
+
+    return null;
+  };
+
+
+
+
   return (
     <div className="chat-page">
 
@@ -480,6 +612,7 @@ function Chat() {
           onSummaryClick={() => setShowSummaryModal(true)}
           onNotesClick={() => setShowNotesModal(true)}
           onFlashcardsClick={() => setShowFlashcardsModal(true)}
+          onQuizClick={() => setShowQuizModal(true)}
         />
 
 
@@ -667,40 +800,33 @@ function Chat() {
               </div>
 
             ) : (
-              
-                messages.map((message) => {
 
-                  const isFlashcard =
-                    message.role === "assistant" &&
-                    isFlashcardMessage(message.content);
 
-                  return isFlashcard ? (
+              messages.map((message) => {
+                const isFlashcard =
+                  message.role === "assistant" &&
+                  isFlashcardMessage(message.content);
 
+                const quiz = isQuizMessage(message)
+                  ? parseQuiz(message.content)
+                  : null;
+
+                if (isFlashcard) {
+                  return (
                     <div
                       key={message._id}
                       className="chat-message assistant-message flashcard-message"
                     >
-
-                      <div className="message-avatar">
-                        G
-                      </div>
+                      <div className="message-avatar">G</div>
 
                       <div className="flashcard-message-body">
-
-                        <div className="message-role">
-                          Graspify AI
-                        </div>
+                        <div className="message-role">Graspify AI</div>
 
                         <div className="flashcards-container">
-
                           {parseFlashcards(message.content).map(
                             (card, index) => {
-
-                              const cardKey =
-                                `${message._id}-${index}`;
-
-                              const isFlipped =
-                                flippedCards[cardKey];
+                              const cardKey = `${message._id}-${index}`;
+                              const isFlipped = flippedCards[cardKey];
 
                               return (
                                 <div
@@ -714,95 +840,310 @@ function Chat() {
                                     }));
                                   }}
                                 >
-
                                   <div className="flashcard-inner">
-
                                     <div className="flashcard-front">
-
                                       <span className="flashcard-label">
                                         Question
                                       </span>
-
-                                      <p>
-                                        {card.question}
-                                      </p>
-
+                                      <p>{card.question}</p>
                                       <span className="flashcard-hint">
                                         Click to reveal answer
                                       </span>
-
                                     </div>
 
                                     <div className="flashcard-back">
-
                                       <span className="flashcard-label">
                                         Answer
                                       </span>
-
-                                      <p>
-                                        {card.answer}
-                                      </p>
-
+                                      <p>{card.answer}</p>
                                       <span className="flashcard-hint">
                                         Click to see question
                                       </span>
-
                                     </div>
-
                                   </div>
-
                                 </div>
                               );
                             }
                           )}
-
                         </div>
-
                       </div>
-
                     </div>
+                  );
+                }
 
-                  ) : (
+                if (quiz) {
+                  const questionIndex = quizAnswers[message._id]?.currentIndex || 0;
+                  const selectedAnswers = quizAnswers[message._id]?.answers || {};
+                  const question = quiz[questionIndex];
 
+                  const submitted = submittedQuizzes[message._id];
+
+                  const isQuizComplete = quiz.every(
+                    (_, index) => selectedAnswers[index] !== undefined
+                  );
+
+                  return (
                     <div
                       key={message._id}
-                      className={`chat-message ${message.role === "user"
-                          ? "user-message"
-                          : "assistant-message"
-                        }`}
+                      className="chat-message assistant-message quiz-message"
                     >
+                      <div className="message-avatar">G</div>
 
-                      <div className="message-avatar">
+                      <div className="quiz-message-body">
+                        <div className="message-role">Graspify AI</div>
 
-                        {message.role === "user"
-                          ? "Y"
-                          : "G"}
+                        <div className="quiz-card">
+                          <div className="quiz-header">
+                            <div>
+                              <h3>Knowledge Quiz</h3>
+                              <p>Test your understanding of the study material.</p>
+                            </div>
 
-                      </div>
+                            <span className="quiz-count">
+                              {quiz.length} questions
+                            </span>
+                          </div>
 
-                      <div className="message-content">
+                          <div className="quiz-progress-info">
+                            <span>
+                              Question {questionIndex + 1} of {quiz.length}
+                            </span>
+                            <span>
+                              {Math.round(
+                                ((questionIndex + 1) / quiz.length) * 100
+                              )}%
+                            </span>
+                          </div>
 
-                        <div className="message-role">
-                          {message.role === "user"
-                            ? "You"
-                            : "Graspify AI"}
+                          <div className="quiz-progress-track">
+                            <div
+                              className="quiz-progress-fill"
+                              style={{
+                                width: `${((questionIndex + 1) / quiz.length) * 100
+                                  }%`,
+                              }}
+                            />
+                          </div>
+
+                          <h4 className="quiz-question">
+                            {question.question}
+                          </h4>
+
+
+                          <div className="quiz-options">
+                            {question.options.map((option, optionIndex) => {
+                              const correctOption = getCorrectOption(question);
+                              const isSelected =
+                                selectedAnswers[questionIndex] === option;
+                              const isCorrect = option === correctOption;
+
+                              let answerClass = "";
+
+                              if (submitted) {
+                                if (isCorrect) {
+                                  answerClass = "correct";
+                                } else if (isSelected) {
+                                  answerClass = "wrong";
+                                }
+                              } else if (isSelected) {
+                                answerClass = "selected";
+                              }
+
+                              return (
+                                <button
+                                  key={optionIndex}
+                                  type="button"
+                                  className={`quiz-option ${answerClass}`}
+                                  disabled={Boolean(submitted)}
+                                  onClick={() => {
+                                    setQuizAnswers((prev) => ({
+                                      ...prev,
+                                      [message._id]: {
+                                        currentIndex: questionIndex,
+                                        answers: {
+                                          ...(prev[message._id]?.answers || {}),
+                                          [questionIndex]: option,
+                                        },
+                                      },
+                                    }));
+                                  }}
+                                >
+                                  <span className="quiz-option-letter">
+                                    {String.fromCharCode(65 + optionIndex)}
+                                  </span>
+
+                                  <span>{option}</span>
+
+                                  {submitted && isCorrect && (
+                                    <span className="quiz-answer-indicator">✓</span>
+                                  )}
+
+                                  {submitted && isSelected && !isCorrect && (
+                                    <span className="quiz-answer-indicator">✕</span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+
+                          <div className="quiz-navigation">
+                            <button
+                              type="button"
+                              className="quiz-nav-button"
+                              disabled={questionIndex === 0}
+                              onClick={() => {
+                                setQuizAnswers((prev) => ({
+                                  ...prev,
+                                  [message._id]: {
+                                    ...prev[message._id],
+                                    currentIndex: questionIndex - 1,
+                                  },
+                                }));
+                              }}
+                            >
+                              Previous
+                            </button>
+
+                            <button
+                              type="button"
+                              className="quiz-nav-button quiz-next-button"
+                              disabled={questionIndex === quiz.length - 1}
+                              onClick={() => {
+                                setQuizAnswers((prev) => ({
+                                  ...prev,
+                                  [message._id]: {
+                                    ...prev[message._id],
+                                    currentIndex: questionIndex + 1,
+                                  },
+                                }));
+                              }}
+                            >
+                              Next
+                            </button>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="quiz-submit-button"
+                            disabled={!isQuizComplete || Boolean(submitted)}
+                            onClick={() => {
+                              const score = quiz.reduce(
+                                (total, item, index) => {
+                                  const correctOption = getCorrectOption(item);
+
+                                  return total +
+                                    (selectedAnswers[index] === correctOption ? 1 : 0);
+                                },
+                                0
+                              );
+
+                              setSubmittedQuizzes((prev) => ({
+                                ...prev,
+                                [message._id]: {
+                                  score,
+                                  answers: { ...selectedAnswers },
+                                },
+                              }));
+                            }}
+                          >
+                            {submitted ? "Quiz Submitted" : "Submit Quiz"}
+                          </button>
+
+
+                          {submitted && (
+                            <div className="quiz-results">
+                              <div className="quiz-score">
+                                <h3>Quiz Completed!</h3>
+                                <p>
+                                  Your score: <strong>{submitted.score} / {quiz.length}</strong>
+                                </p>
+                                <p>
+                                  Percentage:{" "}
+                                  <strong>
+                                    {Math.round((submitted.score / quiz.length) * 100)}%
+                                  </strong>
+                                </p>
+                              </div>
+
+                              <h3 className="quiz-review-heading">
+                                Answer Review
+                              </h3>
+
+                              {quiz.map((item, index) => {
+                                const correctOption = getCorrectOption(item);
+                                const userAnswer = submitted.answers[index];
+
+                                return (
+
+                                  <div
+                                    key={index}
+                                    className="quiz-review-item"
+                                  >
+                                    <h4>
+                                      {index + 1}. {item.question}
+                                    </h4>
+
+                                    <p
+                                      className={`quiz-review-answer ${userAnswer === correctOption ? "review-correct" : "review-wrong"
+                                        }`}
+                                    >
+                                      <strong>Your answer:</strong>{" "}
+                                      {userAnswer || "Not answered"}
+                                      {userAnswer === correctOption ? " ✓" : " ✕"}
+                                    </p>
+
+                                    <p className="quiz-review-answer review-correct">
+                                      <strong>Correct answer:</strong>{" "}
+                                      {correctOption || "Could not identify the correct option"}
+                                    </p>
+
+                                    <p className="quiz-review-explanation">
+                                      <strong>Explanation:</strong>{" "}
+                                      {item.explanation}
+                                    </p>
+                                  </div>
+
+                                );
+                              })}
+                            </div>
+                          )}
+
+
                         </div>
-
-                        {message.role === "assistant" ? (
-                          <ReactMarkdown>
-                            {message.content}
-                          </ReactMarkdown>
-                        ) : (
-                          <p>{message.content}</p>
-                        )}
-
                       </div>
+                    </div>
+                  );
+                }
 
+                return (
+                  <div
+                    key={message._id}
+                    className={`chat-message ${message.role === "user"
+                      ? "user-message"
+                      : "assistant-message"
+                      }`}
+                  >
+                    <div className="message-avatar">
+                      {message.role === "user" ? "Y" : "G"}
                     </div>
 
-                  );
-                })
-              
+                    <div className="message-content">
+                      <div className="message-role">
+                        {message.role === "user" ? "You" : "Graspify AI"}
+                      </div>
+
+                      {message.role === "assistant" ? (
+                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                      ) : (
+                        <p>{message.content}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+
+
 
             )}
 
@@ -1152,6 +1493,114 @@ function Chat() {
 
             </div>
           )}
+
+
+          {/* Quiz Modal */}
+          {showQuizModal && (
+            <div className="summary-modal-overlay">
+              <div className="summary-modal">
+                <div className="summary-modal-header">
+                  <h2>Generate Quiz</h2>
+
+                  <p>
+                    Choose which study material you want to
+                    use for the quiz.
+                  </p>
+                </div>
+
+                <div className="summary-modal-options">
+                  <label className="summary-option">
+                    <input
+                      type="radio"
+                      name="quizOption"
+                      value="all"
+                      checked={quizOption === "all"}
+                      onChange={() => {
+                        setQuizOption("all");
+                        setSelectedQuizDocumentId("");
+                      }}
+                    />
+
+                    <span>All Documents</span>
+                  </label>
+
+                  <label className="summary-option">
+                    <input
+                      type="radio"
+                      name="quizOption"
+                      value="single"
+                      checked={quizOption === "single"}
+                      onChange={() => setQuizOption("single")}
+                    />
+
+                    <span>Select a Document</span>
+                  </label>
+                </div>
+
+                {quizOption === "single" && (
+                  <div className="summary-document-select">
+                    <label htmlFor="quizDocument">
+                      Choose Document
+                    </label>
+
+                    <select
+                      id="quizDocument"
+                      value={selectedQuizDocumentId}
+                      onChange={(event) =>
+                        setSelectedQuizDocumentId(event.target.value)
+                      }
+                    >
+                      <option value="">
+                        Select a document
+                      </option>
+
+                      {documents.map((document) => (
+                        <option
+                          key={document._id}
+                          value={document._id}
+                        >
+                          {document.originalFileName ||
+                            document.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="summary-modal-actions">
+                  <button
+                    className="summary-cancel-button"
+                    onClick={() => {
+                      setShowQuizModal(false);
+                      setQuizOption("all");
+                      setSelectedQuizDocumentId("");
+                    }}
+                    disabled={generatingQuiz}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="summary-generate-button"
+                    onClick={handleGenerateQuiz}
+                    disabled={
+                      generatingQuiz ||
+                      documents.length === 0 ||
+                      (
+                        quizOption === "single" &&
+                        !selectedQuizDocumentId
+                      )
+                    }
+                  >
+                    {generatingQuiz
+                      ? "Generating..."
+                      : "Generate Quiz"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
 
           {/* Question Input */}
 

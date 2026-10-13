@@ -1,5 +1,5 @@
 import Chat from "../models/chat.model.js";
-import { askQuestion, deleteDocumentFromPython, generateSummary, generateNotes, generateFlashcards } from "./python.service.js";
+import { askQuestion, deleteDocumentFromPython, generateSummary, generateNotes, generateFlashcards, generateQuiz } from "./python.service.js";
 import Message from "../models/message.model.js";
 import Document from "../models/document.model.js";
 import fs from "fs/promises";
@@ -300,4 +300,58 @@ export const createFlashcards = async ({
   });
 
   return flashcards;
+};
+
+
+export const createQuiz = async ({
+  chatId,
+  documentIds,
+  user,
+}) => {
+  const chat = await Chat.findOne({
+    _id: chatId,
+    user: user._id,
+  });
+
+  if (!chat) {
+    throw new Error("Chat not found.");
+  }
+
+  if (!documentIds || documentIds.length === 0) {
+    throw new Error("Please select at least one document.");
+  }
+
+  const chatDocumentIds = chat.documents.map(
+    (id) => id.toString()
+  );
+
+  const invalidDocument = documentIds.some(
+    (id) => !chatDocumentIds.includes(id)
+  );
+
+  if (invalidDocument) {
+    throw new Error(
+      "One or more selected documents do not belong to this chat."
+    );
+  }
+
+  await Message.create({
+    chat: chatId,
+    role: "user",
+    content: "Generate a quiz",
+  });
+
+  const response = await generateQuiz({
+    document_ids: documentIds,
+  });
+
+  const quiz = response.quiz;
+
+  await Message.create({
+    chat: chatId,
+    role: "assistant",
+    content: JSON.stringify(quiz),
+  });
+
+  return quiz;
 };

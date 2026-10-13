@@ -16,6 +16,7 @@ from app.services.rag_service import answer_question
 from app.services.summary_service import generate_summary
 from app.services.notes_service import generate_notes
 from app.services.flashcard_service import generate_flashcards
+from app.services.quiz_service import generate_quiz
 
 router = APIRouter()
 
@@ -128,6 +129,17 @@ def create_flashcards(request: SummaryRequest):
     return {
         "success": True,
         "flashcards": flashcards,
+    }
+
+
+@router.post("/quiz")
+def create_quiz(request: SummaryRequest):
+
+    quiz = generate_quiz(request.document_ids)
+
+    return {
+        "success": True,
+        "quiz": quiz,
     }
 
 
