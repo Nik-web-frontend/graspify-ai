@@ -5,18 +5,27 @@ client = chromadb.PersistentClient(path="./chroma_db")
 collection = client.get_or_create_collection(name="study_materials")
 
 
-def store_embeddings(chunks, embeddings, metadata):
+def store_embeddings(chunks, embeddings, metadata, chunk_metadata=None):
     ids = []
-
     metadatas = []
 
     for index, chunk in enumerate(chunks):
         ids.append(f"{metadata['document_id']}_chunk_{index}")
 
-        metadatas.append(metadata)
+        # Preserve existing metadata for this chunk.
+        chunk_info = (
+            chunk_metadata[index].copy()
+            if chunk_metadata is not None
+            else metadata.copy()
+        )
+
+        metadatas.append(chunk_info)
 
     collection.add(
-        ids=ids, documents=chunks, embeddings=embeddings.tolist(), metadatas=metadatas
+        ids=ids,
+        documents=chunks,
+        embeddings=embeddings.tolist(),
+        metadatas=metadatas,
     )
 
 

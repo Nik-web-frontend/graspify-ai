@@ -1133,8 +1133,63 @@ function Chat() {
                         {message.role === "user" ? "You" : "Graspify AI"}
                       </div>
 
+
                       {message.role === "assistant" ? (
-                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                        <>
+                          <ReactMarkdown>
+                            {message.content.replace(
+                              /\s*\[Source:\s*.*?\]/g,
+                              ""
+                            )}
+                          </ReactMarkdown>
+
+
+                          {(() => {
+
+                            const citedPages = new Set();
+
+                            const citationRegex =
+                              /\[Source:\s*(.*?),\s*Page:\s*([\d,\s]+)\]/g;
+
+                            for (const match of message.content.matchAll(citationRegex)) {
+                              const title = match[1].trim();
+                              const pageNumbers = match[2].match(/\d+/g) || [];
+
+                              pageNumbers.forEach((page) => {
+                                citedPages.add(`${title}-${page}`);
+                              });
+                            }
+
+                            const displayedSources = (message.sources || []).filter(
+                              (source) =>
+                                source.page_number != null &&
+                                citedPages.has(`${source.title}-${source.page_number}`)
+                            );
+
+                            return displayedSources.length > 0 ? (
+                              <div className="message-sources">
+                                <div className="sources-heading">
+                                  <span>📚</span>
+                                  <strong>Sources from your PDF</strong>
+                                </div>
+
+                                {displayedSources.map((source, index) => (
+                                  <div
+                                    className="source-item"
+                                    key={`${source.document_id}-${source.page_number}-${index}`}
+                                  >
+                                    <div className="source-title">
+                                      📄 {source.title || "Untitled PDF"}
+                                    </div>
+                                    <div className="source-page">
+                                      Page {source.page_number}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : null;
+                          })()}
+                        </>
                       ) : (
                         <p>{message.content}</p>
                       )}

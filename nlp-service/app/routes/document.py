@@ -43,10 +43,39 @@ class SummaryRequest(BaseModel):
 
 @router.post("/extract-text")
 def extract_text(request: PDFRequest):
-    extracted_text = extract_text_from_pdf(request.file_path)
-    cleaned_text = clean_text(extracted_text)
-    chunks = chunk_text(cleaned_text)
-    embeddings = create_embeddings(chunks)
+    extracted_pages = extract_text_from_pdf(request.file_path)
+
+    all_chunks = []
+    chunk_metadata = []
+
+    for page in extracted_pages:
+        cleaned_text = clean_text(page["text"])
+
+        if not cleaned_text.strip():
+            continue
+
+        page_chunks = chunk_text(cleaned_text)
+
+        for chunk in page_chunks:
+            all_chunks.append(chunk)
+
+            chunk_metadata.append(
+                {
+                    "document_id": request.document_id,
+                    "user_id": request.user_id,
+                    "title": request.title,
+                    "page_number": page["page_number"],
+                }
+            )
+
+    if not all_chunks:
+        return {
+            "success": False,
+            "total_chunks": 0,
+            "message": "No readable text found in the PDF.",
+        }
+
+    embeddings = create_embeddings(all_chunks)
 
     metadata = {
         "document_id": request.document_id,
@@ -54,15 +83,20 @@ def extract_text(request: PDFRequest):
         "title": request.title,
     }
 
-    store_embeddings(chunks, embeddings, metadata)
+    store_embeddings(
+        all_chunks,
+        embeddings,
+        metadata,
+        chunk_metadata=chunk_metadata,
+    )
 
-    storedDocuments = get_all_documents()
+    stored_documents = get_all_documents()
 
     return {
         "success": True,
-        "total_chunks": len(chunks),
-        "message": "Embeddings stored successfully",
-        "storedData": storedDocuments,
+        "document_id": request.document_id,
+        "total_chunks": len(all_chunks),
+        "message": "Page-aware embeddings stored successfully",
     }
 
 
@@ -90,12 +124,16 @@ def test_gemini():
 
 @router.post("/ask")
 def ask_question(request: QuestionRequest):
-    answer = answer_question(request.document_ids, request.question)
+    result = answer_question(
+        request.document_ids,
+        request.question,
+    )
 
     return {
         "success": True,
         "question": request.question,
-        "answer": answer,
+        "answer": result["answer"],
+        "sources": result["sources"],
     }
 
 

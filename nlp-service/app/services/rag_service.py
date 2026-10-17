@@ -4,39 +4,60 @@ from app.services.gemini_service import generate_response
 
 
 def answer_question(document_ids: list[str], question: str):
-
     question_embedding = create_query_embedding(question)
 
-    search_results = search_similar_chunks(question_embedding, document_ids)
+    search_results = search_similar_chunks(
+        question_embedding,
+        document_ids,
+    )
 
     retrieved_chunks = search_results.get("documents", [[]])[0]
+    retrieved_metadatas = search_results.get("metadatas", [[]])[0]
 
     if not retrieved_chunks:
-        return "I couldn't find that information in the uploaded documents."
+        return {
+            "answer": "I couldn't find that information in the uploaded documents.",
+            "sources": [],
+        }
 
-    context = "\n\n".join(retrieved_chunks)
+    context_parts = []
+    sources = []
+    seen_sources = set()
+
+    for chunk, metadata in zip(retrieved_chunks, retrieved_metadatas):
+        title = metadata.get("title", "Uploaded document")
+        page_number = metadata.get("page_number")
+
+        context_parts.append(f"[Source: {title}, Page: {page_number}]\n{chunk}")
+
+        source_key = (metadata.get("document_id"), page_number)
+
+        if source_key not in seen_sources:
+            seen_sources.add(source_key)
+
+            sources.append(
+                {
+                    "document_id": metadata.get("document_id"),
+                    "title": title,
+                    "page_number": page_number,
+                }
+            )
+
+    context = "\n\n".join(context_parts)
 
     prompt = f"""
 You are Graspify AI, an AI Study Assistant.
 
-Your job is to help students understand their uploaded study material.
+Answer the user's question using ONLY the supplied context.
 
-Use ONLY the information provided in the context below to answer the user's question.
-
-Important instructions:
-
-1. Understand the provided context before answering.
-2. Explain the answer in simple, clear and beginner-friendly language.
-3. Do not simply copy or repeat the sentences from the context.
-4. Rephrase the information naturally so the student can understand it easily.
-5. Match the length of the answer to the user's question.
-6. For simple definition questions, give a short and clear explanation first.
-7. Use bullet points or examples only when they are useful for understanding the answer.
-8. Do not add additional facts, statistics, characteristics, examples, or background information unless they are supported by the provided context.
-9. Do not introduce yourself or greet the user unless they explicitly greet you.
-10. Keep the answer focused on the user's question.
-11. Do not use information that is not present in the provided context.
-12. If the answer cannot be found in the provided context, reply exactly:
+Instructions:
+1. Explain the answer in simple, beginner-friendly language.
+2. Keep the answer focused and match its length to the question.
+3. Do not add facts that are unsupported by the context.
+4. Use the source labels supplied with the context when citing claims.
+5. Cite supporting claims using [Source: document title, Page: page number].
+6. Never invent document titles or page numbers.
+7. If the answer cannot be found in the context, reply exactly:
 "I couldn't find that information in the uploaded documents."
 
 Context:
@@ -52,4 +73,7 @@ Answer:
 
     answer = generate_response(prompt)
 
-    return answer
+    return {
+        "answer": answer,
+        "sources": sources,
+    }

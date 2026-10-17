@@ -44,6 +44,7 @@ export const askQuestionInChat = async ({ chatId, question }) => {
     chat: chatId,
     role: "assistant",
     content: response.answer,
+    sources: response.sources || [],
   });
 
   return response;

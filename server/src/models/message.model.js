@@ -18,6 +18,16 @@ const messageSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+      sources: {
+      type: [
+        {
+          document_id: String,
+          title: String,
+          page_number: Number,
+        },
+      ],
+      default: [],
+    },
   },
   {
     timestamps: true,
