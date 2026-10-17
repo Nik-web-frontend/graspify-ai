@@ -421,12 +421,6 @@ function Chat() {
 
     if (!question.trim()) return;
 
-    // Don't allow question without documents
-    if (documents.length === 0) {
-      alert("Please upload a PDF first.");
-      return;
-    }
-
     try {
 
       setAsking(true);
@@ -1661,37 +1655,27 @@ function Chat() {
 
           <div className="question-area">
 
-            <div className="question-box">
 
+            <div className="question-box">
               <input
                 type="text"
                 placeholder={
                   documents.length > 0
                     ? "Ask anything about your study materials..."
-                    : "Upload a PDF first..."
+                    : "Ask Graspify AI anything..."
                 }
                 value={question}
-                onChange={(e) =>
-                  setQuestion(e.target.value)
-                }
+                onChange={(e) => setQuestion(e.target.value)}
                 onKeyDown={handleKeyDown}
-                disabled={
-                  documents.length === 0 ||
-                  asking
-                }
+                disabled={asking}
               />
 
               <button
                 onClick={handleSend}
-                disabled={
-                  documents.length === 0 ||
-                  !question.trim() ||
-                  asking
-                }
+                disabled={!question.trim() || asking}
               >
                 {asking ? "..." : "↑"}
               </button>
-
             </div>
 
             <p className="input-note">

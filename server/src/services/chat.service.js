@@ -21,10 +21,6 @@ export const askQuestionInChat = async ({ chatId, question }) => {
     throw new Error("Chat not found.");
   }
 
-  if (chat.documents.length === 0) {
-    throw new Error("No document found in this chat.");
-  }
-
   const documentIds = chat.documents.map(
     (documentId) => documentId.toString()
   );
